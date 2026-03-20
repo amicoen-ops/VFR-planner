@@ -1,0 +1,2579 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0055d4">
+<title>VFR Flight Planner v5 — Italy</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#faf8f5;--bg2:#f0ede8;--bg3:#e6e2db;--card:#fff;
+  --bd:#cec9bf;--bdh:#a8a299;
+  --ink:#1a1710;--ink2:#3d3830;--ink3:#6b6458;--ink4:#9a9488;
+  --blue:#0055d4;--bluel:#e8f0fd;--blued:#003d9e;
+  --green:#007a3d;--greenl:#e5f5ec;
+  --orange:#c45500;--orangel:#fdf0e4;
+  --red:#c41e1e;--redl:#fde8e8;
+  --mag:#7b2d8e;--cyan:#006b7a;--cyanl:#e4f4f7;
+  --fm:'IBM Plex Mono',monospace;--fs:'Nunito Sans',sans-serif;
+}
+html,body{height:100%;background:var(--bg);color:var(--ink);font-family:var(--fs);font-size:13px;overflow:hidden}
+.app{display:grid;grid-template-columns:330px 1fr;grid-template-rows:42px 1fr;height:100vh}
+.top{grid-column:1/-1;background:var(--blue);color:#fff;display:flex;align-items:center;padding:0 10px;gap:6px;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+.sb{grid-row:2;background:var(--bg2);border-right:2px solid var(--bd);overflow-y:auto;display:flex;flex-direction:column}
+.mn{grid-row:2;display:flex;flex-direction:column;overflow:hidden}
+.mw{flex:1;position:relative}.bp{height:240px;background:var(--card);border-top:2px solid var(--bd);display:flex;flex-direction:column;overflow:hidden}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--bdh);border-radius:3px}
+.logo{font-family:var(--fm);font-weight:700;font-size:14px}.logo em{font-style:normal;background:rgba(255,255,255,.2);padding:1px 4px;border-radius:3px}
+.sep{width:1px;height:18px;background:rgba(255,255,255,.25)}
+.hs{font-family:var(--fm);font-size:9px;color:rgba(255,255,255,.8)}.hs b{color:#fff;font-weight:700;font-size:11px}.hs.w b{color:#ffd166}.hs.e b{color:#ff6b6b}
+.sp{flex:1}
+.btn{padding:4px 8px;border:2px solid var(--bd);background:var(--card);color:var(--ink);border-radius:3px;cursor:pointer;font-family:var(--fm);font-size:9px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:3px}
+.btn:hover{background:var(--bg3)}.btn-p{border-color:var(--blue);color:var(--blue);background:var(--bluel)}.btn-p:hover{background:var(--blue);color:#fff}
+.btn-d{border-color:var(--red);color:var(--red)}.btn-d:hover{background:var(--red);color:#fff}
+.btn-g{border-color:var(--green);color:var(--green);background:var(--greenl)}.btn-g:hover{background:var(--green);color:#fff}
+.tbtn{padding:3px 7px;border:2px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;border-radius:3px;cursor:pointer;font-family:var(--fm);font-size:8px;font-weight:600}.tbtn:hover{background:rgba(255,255,255,.2)}
+.pn{border-bottom:2px solid var(--bd)}.ph{padding:6px 8px;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:var(--ink3);background:var(--bg3);cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none}
+.ph:hover{color:var(--ink)}.ph .a{font-size:7px}.ph.shut .a{transform:rotate(-90deg)}.pb{padding:6px 8px}.pb.hid{display:none}
+.fr{display:flex;gap:4px;margin-bottom:4px;align-items:flex-end}.fg{flex:1;min-width:0}
+.fg label{display:block;font-size:8px;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:1px;font-family:var(--fm);font-weight:600}
+input,select{width:100%;background:var(--card);border:2px solid var(--bd);color:var(--ink);padding:4px 5px;border-radius:3px;font-family:var(--fm);font-size:10px;font-weight:600;outline:none}
+input:focus{border-color:var(--blue)}input::placeholder{color:var(--ink4)}
+.chips{display:flex;flex-wrap:wrap;gap:2px;margin-bottom:4px}
+.chip{padding:2px 6px;border-radius:3px;font-size:8px;font-family:var(--fm);font-weight:600;background:var(--card);border:2px solid var(--bd);cursor:pointer;color:var(--ink2)}
+.chip:hover,.chip.on{border-color:var(--blue);color:var(--blue);background:var(--bluel)}
+.ri{display:flex;align-items:center;gap:3px;padding:3px 5px;background:var(--card);border:2px solid var(--bd);border-radius:3px;margin-bottom:2px;font-family:var(--fm);font-size:9px}
+.ri .ix{width:14px;height:14px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;flex-shrink:0}
+.ri .ic{color:var(--green);font-weight:700;min-width:30px}.ri .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.ri .frq{color:var(--mag);font-size:8px;font-weight:700}
+.ri .ab{cursor:pointer;font-size:7px;font-weight:700;padding:1px 4px;border:1px solid var(--bd);border-radius:2px;white-space:nowrap}
+.ri .rm{cursor:pointer;color:var(--ink4);font-size:12px;font-weight:700;width:14px;height:14px;display:flex;align-items:center;justify-content:center;border-radius:2px}
+.ri .rm:hover{color:var(--red);background:var(--redl)}
+.scards{display:flex;gap:3px;margin:4px 0}.sc{flex:1;background:var(--card);border:2px solid var(--bd);border-radius:3px;padding:3px;text-align:center}
+.sc .sv{font-family:var(--fm);font-size:13px;font-weight:700;color:var(--blue)}.sc .sl{font-size:7px;color:var(--ink3);text-transform:uppercase;font-weight:700}
+.fbar{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;border:2px solid var(--bd);margin:3px 0}.fbar-f{height:100%;border-radius:2px;transition:width .3s}
+.fbar-l{display:flex;justify-content:space-between;font-size:7px;font-family:var(--fm);color:var(--ink3);font-weight:600}
+.srch{position:relative;margin-bottom:4px}.srl{position:absolute;top:100%;left:0;right:0;z-index:20;background:var(--card);border:2px solid var(--bd);border-top:0;border-radius:0 0 4px 4px;max-height:200px;overflow-y:auto;display:none;box-shadow:0 4px 12px rgba(0,0,0,.1)}
+.srl.vis{display:block}.sri{padding:4px 6px;cursor:pointer;font-size:9px;display:flex;gap:4px;align-items:center;border-bottom:1px solid var(--bg3)}
+.sri:hover{background:var(--bluel)}.sri .si{color:var(--green);font-family:var(--fm);font-weight:700;min-width:36px}
+.sri .sn{color:var(--ink2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.wx-src{display:flex;gap:2px;margin-bottom:4px;flex-wrap:wrap}
+.wx-lk{font-size:8px;padding:1px 5px;border-radius:2px;text-decoration:none;font-family:var(--fm);font-weight:700;border:1px solid var(--bd);color:var(--ink2)}
+.wx-lk:hover{border-color:var(--blue);color:var(--blue)}.wx-lk.of{border-color:var(--green);color:var(--green);background:var(--greenl)}
+.wxb{background:var(--card);border:2px solid var(--bd);border-radius:3px;padding:4px 6px;margin-bottom:3px;font-family:var(--fm);font-size:9px;line-height:1.4;color:var(--ink);max-height:60px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;font-weight:500}
+.wxl{font-size:8px;font-family:var(--fm);color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin:2px 0 1px;font-weight:700}
+#map{width:100%;height:100%;background:var(--bg)}.leaflet-container{background:var(--bg)!important}
+.leaflet-control-zoom a{background:var(--card)!important;color:var(--ink)!important;border-color:var(--bd)!important;font-weight:700!important}
+.wp-lbl{font-family:var(--fm);font-size:10px;font-weight:700;color:var(--blue);text-shadow:2px 2px 0 #fff,-2px -2px 0 #fff,2px -2px 0 #fff,-2px 2px 0 #fff,0 2px 0 #fff,0 -2px 0 #fff,2px 0 0 #fff,-2px 0 0 #fff}
+.rp-lbl{font-family:var(--fm);font-size:8px;font-weight:600;color:var(--ink3);text-shadow:1px 1px 0 #fff,-1px 1px 0 #fff}
+.ml{position:absolute;bottom:6px;left:6px;z-index:1000;background:rgba(255,255,255,.95);border:2px solid var(--bd);border-radius:4px;padding:4px 8px;font-family:var(--fm);font-size:8px;font-weight:700;display:flex;gap:8px;flex-wrap:wrap}
+.ml .lg{display:flex;align-items:center;gap:3px;color:var(--ink2)}.ml .lg .d{width:8px;height:8px;border-radius:50%;border:1.5px solid rgba(0,0,0,.2)}
+.mc{position:absolute;top:6px;right:6px;z-index:1000;background:rgba(255,255,255,.95);border:2px solid var(--bd);border-radius:4px;padding:6px 8px;font-family:var(--fm);font-size:8px;display:flex;flex-direction:column;gap:3px}
+.mc label{display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:600;color:var(--ink2)}
+.mc input[type=checkbox]{accent-color:var(--blue)}
+.mc input[type=range]{width:80px;accent-color:var(--blue)}
+.bph{display:flex;justify-content:space-between;align-items:center;padding:4px 10px;background:var(--bg2);border-bottom:2px solid var(--bd);flex-shrink:0}
+.bph h3{font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.8px;color:var(--ink2)}
+.bpt{display:flex}.bt{padding:3px 8px;font-size:9px;font-family:var(--fm);font-weight:700;cursor:pointer;border:2px solid var(--bd);color:var(--ink3);background:var(--card)}
+.bt:first-child{border-radius:3px 0 0 3px}.bt:last-child{border-radius:0 3px 3px 0}.bt+.bt{margin-left:-2px}
+.bt.on{background:var(--bluel);border-color:var(--blue);color:var(--blue)}
+.bpc{flex:1;overflow:auto}
+table{width:100%;border-collapse:collapse;font-family:var(--fm);font-size:9px}
+th{position:sticky;top:0;z-index:2;background:var(--bg3);padding:3px 5px;text-align:right;font-size:7px;font-weight:900;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);border-bottom:2px solid var(--bd);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}td{padding:3px 5px;text-align:right;border-bottom:1px solid var(--bg3);color:var(--ink2);white-space:nowrap;font-weight:500}
+td:first-child{color:var(--ink);font-weight:700}tr:hover td{background:var(--bluel)}
+td small{display:block;font-size:7px;opacity:.7;line-height:1}
+tr.tot td{background:var(--bg2);color:var(--ink);font-weight:900;border-top:3px solid var(--bd)}
+.vg{color:var(--green)!important;font-weight:700!important}.va{color:var(--orange)!important;font-weight:700!important}.vr{color:var(--red)!important;font-weight:700!important}
+.em{text-align:center;padding:10px;color:var(--ink4);font-size:9px;font-weight:600}
+.brief{padding:8px;font-size:10px;line-height:1.5;color:var(--ink)}.brief h4{font-size:10px;color:var(--ink);margin:6px 0 2px;font-weight:900;text-transform:uppercase;letter-spacing:.4px}
+.brief .bi{margin-bottom:2px;padding-left:6px;border-left:3px solid var(--bd);font-weight:500}.brief .bi.w{border-color:var(--orange);background:var(--orangel);padding:2px 6px;border-radius:0 3px 3px 0}
+.brief .bi.ok{border-color:var(--green);background:var(--greenl);padding:2px 6px;border-radius:0 3px 3px 0}
+/* Optimize route button */
+.opt-btn{width:100%;padding:6px;border:2px solid var(--green);background:var(--greenl);color:var(--green);border-radius:4px;cursor:pointer;font-family:var(--fm);font-size:10px;font-weight:700;margin-top:4px;text-align:center}
+.opt-btn:hover{background:var(--green);color:#fff}
+.airspace-warn{background:var(--redl);border:2px solid var(--red);border-radius:4px;padding:5px 8px;margin:4px 0;font-family:var(--fm);font-size:8px;font-weight:700;color:var(--red);line-height:1.6}
+.airspace-warn b{color:var(--green);font-size:10px}
+.cir-card{background:var(--cyanl);border:2px solid var(--cyan);border-radius:4px;padding:5px 8px;margin-bottom:3px;font-family:var(--fm);font-size:8px}
+.cir-card .cir-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
+.cir-card .cir-apt{font-weight:900;font-size:10px;color:var(--cyan)}
+.cir-card .cir-rwy{font-weight:900;font-size:14px;color:var(--ink)}
+.cir-card .cir-legs{display:flex;gap:3px;flex-wrap:wrap}
+.cir-card .cir-leg{background:var(--card);border:1.5px solid var(--bd);border-radius:3px;padding:2px 5px;text-align:center;flex:1;min-width:55px}
+.cir-card .cir-leg b{display:block;font-size:11px;font-weight:900;color:var(--ink)}
+.cir-card .cir-leg small{font-size:7px;color:var(--ink3);font-weight:700;text-transform:uppercase}
+.cir-card .cir-leg.act{border-color:var(--blue);background:var(--bluel)}
+.cir-card .cir-leg.act b{color:var(--blue)}
+.cir-card .cir-wind{font-size:8px;color:var(--ink3);margin-top:3px;font-weight:600}
+.cir-card .cir-xw{font-weight:900}.xw-ok{color:var(--green)}.xw-warn{color:var(--orange)}.xw-crit{color:var(--red)}
+
+/* GPS TRACKING PANEL — draggable + resizable */
+.gps-panel{position:absolute;top:60px;right:10px;z-index:1500;background:rgba(255,255,255,.97);border:3px solid var(--blue);border-radius:10px;padding:0;width:300px;box-shadow:0 8px 32px rgba(0,0,0,.3);display:none;font-family:var(--fm);resize:both;overflow:hidden;min-width:200px;min-height:120px;max-width:90vw;max-height:80vh}
+.gps-panel.on{display:flex;flex-direction:column}
+.gps-panel.mini{width:200px!important;height:auto!important;min-height:auto}
+.gps-panel.mini .gps-body{display:none}
+.gps-panel.mini .gps-fuel{margin:0;border-radius:0 0 7px 7px}
+.gps-handle{padding:6px 10px;cursor:move;background:var(--blue);color:#fff;border-radius:7px 7px 0 0;display:flex;justify-content:space-between;align-items:center;user-select:none;flex-shrink:0;touch-action:none}
+.gps-handle .gps-title{font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.8px}
+.gps-handle .gps-btns{display:flex;gap:2px}
+.gps-handle .gps-btns span{cursor:pointer;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:4px;font-size:13px}
+.gps-handle .gps-btns span:hover{background:rgba(255,255,255,.2)}
+.gps-body{padding:8px;overflow-y:auto;flex:1}
+.gps-fuel{background:var(--ink);color:#fff;border-radius:8px;padding:8px;text-align:center;margin-bottom:6px}
+.gps-fuel .gf-val{font-size:32px;font-weight:900;line-height:1}
+.gps-fuel .gf-lbl{font-size:8px;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.8px;margin-top:1px}
+.gps-fuel.low{background:var(--orange)}.gps-fuel.crit{background:var(--red)}
+.gps-row{display:flex;gap:4px;margin-bottom:4px}
+.gps-box{flex:1;background:var(--bg2);border:2px solid var(--bd);border-radius:5px;padding:4px;text-align:center}
+.gps-box .gb-val{font-size:16px;font-weight:900;color:var(--ink)}
+.gps-box .gb-lbl{font-size:6px;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px;font-weight:700}
+.gps-box.next{border-color:var(--blue);background:var(--bluel)}
+.gps-box.next .gb-val{color:var(--blue)}
+.gps-bar{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;border:2px solid var(--bd);margin:3px 0}
+.gps-bar-f{height:100%;border-radius:3px;transition:width .5s}
+.gps-pos{font-size:7px;color:var(--ink3);text-align:center;margin-top:3px}
+.gps-start-btn{position:absolute;bottom:40px;left:50%;transform:translateX(-50%);z-index:1100;padding:8px 20px;border:3px solid var(--green);background:var(--greenl);color:var(--green);border-radius:8px;cursor:pointer;font-family:var(--fm);font-size:12px;font-weight:900;box-shadow:0 4px 16px rgba(0,0,0,.15);white-space:nowrap}
+.gps-start-btn:hover{background:var(--green);color:#fff}
+.gps-start-btn.active{border-color:var(--red);background:var(--redl);color:var(--red)}
+.gps-start-btn.active:hover{background:var(--red);color:#fff}
+/* ═══ MOBILE / TABLET — dual: .mob class (JS) + @media fallback ═══ */
+.ham{display:none;font-size:22px;cursor:pointer;padding:2px 6px;border-radius:4px;line-height:1}
+.ham:hover{background:rgba(255,255,255,.15)}
+.sb-mob-head{display:none}
+.bp-tog{display:none}
+
+/* Mobile styles via .mob class (JS-detected) */
+.mob{grid-template-columns:1fr!important;grid-template-rows:44px 1fr!important}
+.mob .ham{display:inline-block}
+.mob .mob-hide{display:none!important}
+.mob .top{padding:0 6px;gap:4px}
+.mob .top .logo{font-size:11px}
+.mob .top .hs{font-size:8px}.mob .top .hs b{font-size:10px}
+.mob .top .tbtn{font-size:7px;padding:3px 5px}
+
+.mob .sb{position:fixed!important;top:0;left:0;width:100%!important;height:100%!important;z-index:2000;background:var(--bg2);transform:translateX(-100%);transition:transform .25s ease;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:60px;border-right:0!important}
+.mob .sb.open{transform:translateX(0)}
+.mob .sb-mob-head{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--blue);color:#fff;font-family:var(--fm);font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:1px;position:sticky;top:0;z-index:10}
+.mob .sb-close{font-size:22px;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:6px}
+
+.mob .ph{padding:10px 12px;font-size:11px}
+.mob .pb{padding:8px 10px}
+.mob input,.mob select{padding:8px;font-size:12px;border-radius:4px}
+.mob .btn{padding:7px 10px;font-size:10px;border-radius:4px}
+.mob .chip{padding:5px 10px;font-size:10px;border-radius:4px}
+.mob .fg label{font-size:9px;margin-bottom:2px}
+.mob .ri{padding:6px 8px;font-size:10px;margin-bottom:3px}
+.mob .ri .ix{width:20px;height:20px;font-size:9px}
+.mob .ri .rm{width:24px;height:24px;font-size:16px}
+.mob .ri .ab{padding:3px 8px;font-size:9px}
+
+.mob .bp{height:45vh;max-height:50vh;position:relative;transition:height .25s ease}
+.mob .bp.collapsed{height:36px;min-height:36px;overflow:hidden}
+.mob .bp-tog{display:flex;position:absolute;top:-28px;left:50%;transform:translateX(-50%);z-index:1100;width:48px;height:28px;background:var(--card);border:2px solid var(--bd);border-bottom:0;border-radius:8px 8px 0 0;align-items:center;justify-content:center;cursor:pointer;font-size:16px}
+.mob .bp.collapsed .bp-tog span::after{content:' ▲'}
+.mob .bp:not(.collapsed) .bp-tog span::after{content:' ▼'}
+.mob table{font-size:10px}
+.mob th{font-size:8px;padding:5px 4px}
+.mob td{padding:5px 4px;font-size:9px}
+
+.mob .mc{top:4px;right:4px;padding:5px 6px;font-size:9px;max-width:160px}
+.mob .ml{bottom:4px;left:4px;font-size:7px;padding:3px 6px}
+.mob .gps-panel{width:240px;top:50px;right:6px}
+.mob .gps-panel .gb-val{font-size:14px}
+.mob .gps-fuel .gf-val{font-size:26px}
+.mob .gps-start-btn{bottom:auto;top:50px;left:6px;transform:none;font-size:10px;padding:7px 14px}
+.mob .srl{max-height:250px}
+.mob .sri{padding:8px;font-size:11px}
+.mob .wx-lk{padding:4px 8px;font-size:9px}
+
+/* Media query fallback (same rules) */
+@media(max-width:900px){
+  .app{grid-template-columns:1fr!important;grid-template-rows:44px 1fr!important}
+  .ham{display:inline-block}.mob-hide{display:none!important}
+  .sb{position:fixed!important;top:0;left:0;width:100%!important;height:100%!important;z-index:2000;transform:translateX(-100%);transition:transform .25s ease;overflow-y:auto;padding-bottom:60px;border-right:0!important}
+  .sb.open{transform:translateX(0)}.sb-mob-head{display:flex}
+  .bp{height:45vh;position:relative}.bp.collapsed{height:36px;min-height:36px;overflow:hidden}
+  .bp-tog{display:flex}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+<div class="top">
+  <span class="ham" onclick="togSidebar()">☰</span>
+  <div class="logo"><em>VFR</em> Planner v5</div>
+  <div class="sep mob-hide"></div><div class="hs mob-hide">WPT <b id="h-w">0</b></div>
+  <div class="sep mob-hide"></div><div class="hs mob-hide">DIST <b id="h-d">—</b></div>
+  <div class="sep"></div><div class="hs" id="h-fw">FUEL <b id="h-f">—</b></div>
+  <div class="sep"></div><div class="hs">RWY <b id="h-rwy">—</b></div>
+  <div class="sep mob-hide"></div><div class="hs mob-hide">ETE <b id="h-e">—</b></div>
+  <div class="sep mob-hide"></div><div class="hs mob-hide">TAS <b id="h-tas">85kt</b></div>
+  <div class="sp"></div>
+  <button class="tbtn" onclick="exportPDF()">📄 PDF</button>
+  <button class="tbtn mob-hide" onclick="exportLog()">📋 Copy</button>
+  <button class="tbtn mob-hide" onclick="genBrief()">📄 Brief</button>
+  <button class="tbtn" onclick="clrR()">✕ Clear</button>
+</div>
+
+<div class="sb" id="sidebar">
+  <div class="sb-mob-head"><span>Flight Setup</span><span class="sb-close" onclick="togSidebar()">✕</span></div>
+  <!-- AIRCRAFT -->
+  <div class="pn"><div class="ph" onclick="tog(this)">✈ Aircraft <span class="a">▼</span></div><div class="pb">
+    <div class="chips" id="pre"></div>
+    <div class="fr">
+      <div class="fg"><label>TAS (kt)</label><input type="number" id="a-t" value="85" onchange="syncUnit('a-t','a-tk',1.852);calc()"></div>
+      <div class="fg"><label>TAS (km/h)</label><input type="number" id="a-tk" value="157" onchange="syncUnit('a-tk','a-t',1/1.852);calc()"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>FF (L/h)</label><input type="number" id="a-f" value="16" step=".5" onchange="syncUnit('a-f','a-fg',0.264172);calc()"></div>
+      <div class="fg"><label>FF (gal/h)</label><input type="number" id="a-fg" value="4.2" step=".1" onchange="syncUnit('a-fg','a-f',1/0.264172);calc()"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Fuel (L)</label><input type="number" id="a-c" value="72" onchange="syncUnit('a-c','a-cg',0.264172);calc()"></div>
+      <div class="fg"><label>Fuel (gal)</label><input type="number" id="a-cg" value="19.0" step=".1" onchange="syncUnit('a-cg','a-c',1/0.264172);calc()"></div>
+    </div>
+    <div class="fr"><div class="fg"><label>Var (°E)</label><input type="number" id="a-v" value="3.2" step=".1" onchange="calc()"></div></div>
+    <div class="fr"><div class="fg"><label>Cruise Alt (ft)</label><input type="number" id="a-alt" value="2500" step="500" onchange="calc()"></div>
+    <div class="fg"><label>Max Alt (ft)</label><input type="number" id="a-maxalt" value="8000" step="500" onchange="calc()"></div></div>
+  </div></div>
+
+  <!-- FUEL PLANNING -->
+  <div class="pn"><div class="ph" onclick="tog(this)">⛽ Fuel Planning (VFR) <span class="a">▼</span></div><div class="pb">
+    <div class="fr">
+      <div class="fg"><label>Taxi+Startup (L)</label><input type="number" id="f-taxi" value="3" step=".5" onchange="calc()"></div>
+      <div class="fg"><label>Climb (L)</label><input type="number" id="f-climb" value="2" step=".5" onchange="calc()"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Alternate dist (NM)</label><input type="number" id="f-altdist" value="0" step="5" onchange="calc()"></div>
+      <div class="fg"><label>Contingency %</label><input type="number" id="f-cont" value="5" min="0" max="20" step="1" onchange="calc()"></div>
+    </div>
+    <div class="fr">
+      <div class="fg">
+        <label>Final Reserve</label>
+        <select id="f-restype" onchange="calc()">
+          <option value="30">VFR Day — 30 min</option>
+          <option value="45">VFR Night — 45 min</option>
+          <option value="20">UL/VDS — 20 min</option>
+          <option value="60">Custom — 60 min</option>
+        </select>
+      </div>
+    </div>
+    <!-- FUEL BREAKDOWN -->
+    <div style="margin-top:6px;background:var(--card);border:2px solid var(--bd);border-radius:4px;padding:6px 8px;font-family:var(--fm);font-size:9px">
+      <div style="font-weight:900;font-size:8px;text-transform:uppercase;letter-spacing:.8px;color:var(--ink3);margin-bottom:4px">Fuel Breakdown</div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:2px"><span>① Taxi + Startup</span><b id="fb-taxi">3.0 L</b></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:2px"><span>② Climb</span><b id="fb-climb">2.0 L</b></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:2px"><span>③ Trip Fuel (wind-corrected)</span><b id="fb-trip">— L</b></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:2px"><span>④ Contingency (<span id="fb-contpct">5</span>%)</span><b id="fb-cont">— L</b></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:2px"><span>⑤ Alternate</span><b id="fb-alt">0 L</b></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:2px"><span>⑥ Final Reserve (<span id="fb-resmin">30</span> min)</span><b id="fb-res">— L</b></div>
+      <div style="border-top:2px solid var(--bd);margin-top:4px;padding-top:4px;display:flex;justify-content:space-between;font-size:11px">
+        <span style="font-weight:900">TOTAL REQUIRED</span><b id="fb-total" style="color:var(--red)">— L</b>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:2px">
+        <span>Onboard</span><b id="fb-onboard" style="color:var(--blue)">72 L</b>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:2px">
+        <span style="font-weight:900">MARGIN</span><b id="fb-margin" style="font-size:11px">— L</b>
+      </div>
+      <div id="fb-status" style="margin-top:4px;padding:3px 6px;border-radius:3px;text-align:center;font-weight:900;font-size:9px"></div>
+    </div>
+  </div></div>
+
+  <!-- WEATHER -->
+  <div class="pn"><div class="ph" onclick="tog(this)">🌤 Weather & Flight Time <span class="a">▼</span></div><div class="pb">
+    <div style="font-size:8px;color:var(--green);font-family:var(--fm);font-weight:700;margin-bottom:4px">Auto-meteo: <a href="https://open-meteo.com" target="_blank" style="color:var(--green)">Open-Meteo</a> (GFS/ECMWF) + <a href="https://www.deskaeronautico.it/mappa/" target="_blank" style="color:var(--green)">Desk Aeronautico</a></div>
+    <div class="fr">
+      <div class="fg"><label>Dep Date</label><input type="date" id="fl-date" onchange="autoFetchWx()"></div>
+      <div class="fg"><label>Dep Time (LT)</label><input type="time" id="fl-time" value="10:00" onchange="autoFetchWx()"></div>
+    </div>
+    <button class="btn btn-g" style="width:100%;margin-bottom:4px;justify-content:center" onclick="autoFetchWx()">🌤 Fetch Route Weather (Open-Meteo + METAR)</button>
+    <div class="wx-src">
+      <a class="wx-lk of" href="https://www.deskaeronautico.it/mappa/" target="_blank">🗺 NOTAM</a>
+      <a class="wx-lk of" href="https://www.deskaeronautico.it/airport-easy-briefing/" target="_blank">📋 Brief</a>
+      <a class="wx-lk" href="https://www.deskaeronautico.it/carte-meteo/" target="_blank">🌦 Meteo</a>
+      <a class="wx-lk" href="https://www.deskaeronautico.it/sigmet-e-airmet/" target="_blank">⚡ SIGMET</a>
+      <a class="wx-lk" href="https://www.deskaeronautico.it/calcolo-effemeridi/" target="_blank">🌅 Effemeridi</a>
+    </div>
+    <div id="wx-auto" style="display:none;background:var(--card);border:2px solid var(--bd);border-radius:4px;padding:6px 8px;margin:4px 0;font-family:var(--fm);font-size:9px;max-height:150px;overflow-y:auto"></div>
+    <div class="wxl">METAR (aviationweather.gov)</div>
+    <div class="fr"><input id="wx-s" placeholder="ICAO (LIMF,LILR)" style="flex:1"><button class="btn btn-p" onclick="fetchWx()">Fetch</button></div>
+    <div class="wxb" id="wx-m"><span style="color:var(--ink4)">Enter ICAO → Fetch</span></div>
+    <div class="fr" style="margin-top:3px">
+      <div class="fg"><label>Wind DIR° (man.)</label><input type="number" id="w-d" value="0" onchange="calc()"></div>
+      <div class="fg"><label>Wind kt (man.)</label><input type="number" id="w-s" value="0" onchange="calc()"></div>
+      <div class="fg" style="flex:0 0 auto"><label>&nbsp;</label><button class="btn btn-p" onclick="applyWx()">←MET</button></div>
+    </div>
+    <div style="font-size:7px;color:var(--ink4);font-family:var(--fm);margin-top:2px">Manual wind overrides auto-fetch. Wind applied globally to all legs.</div>
+    <div style="margin-top:3px"><a href="https://www.windy.com/?45.300,7.870,8,wind,950h" target="_blank" class="btn" style="width:100%;justify-content:center;font-size:9px">🌊 Open Windy.com (wind at altitude)</a></div>
+  </div></div>
+
+  <!-- AIRFIELD DB -->
+  <div class="pn"><div class="ph shut" onclick="tog(this)">🛫 Airfield Database (<span id="db-count">0</span>) <span class="a">▼</span></div><div class="pb hid">
+    <div style="font-size:8px;color:var(--ink3);font-family:var(--fm);margin-bottom:4px">Add/edit airfields. Data saved in browser (localStorage).</div>
+    <div style="border:2px solid var(--green);border-radius:4px;padding:6px;margin-bottom:4px;background:var(--greenl)">
+      <div style="font-size:8px;font-weight:900;color:var(--green);margin-bottom:3px;font-family:var(--fm)">➕ ADD AIRFIELD</div>
+      <div class="fr">
+        <div class="fg"><label>ICAO (or —)</label><input id="db-icao" value="—" maxlength="4"></div>
+        <div class="fg"><label>Name</label><input id="db-name" placeholder="Campo XYZ"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label>City</label><input id="db-city" placeholder="Città"></div>
+        <div class="fg"><label>Type</label><select id="db-type"><option value="V">Aviosup.</option><option value="A">Airport</option></select></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label>Lat</label><input type="number" id="db-lat" step="0.0001" placeholder="45.3067"></div>
+        <div class="fg"><label>Lon</label><input type="number" id="db-lon" step="0.0001" placeholder="7.8703"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label>Elev (ft)</label><input type="number" id="db-elev" value="0"></div>
+        <div class="fg"><label>Runway</label><input id="db-rw" placeholder="17/35 400m"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label>Freq</label><input id="db-freq" placeholder="130.00"></div>
+        <div class="fg"><label>Circuit</label><select id="db-cir"><option value="L">Left ⟲</option><option value="R">Right ⟳</option></select></div>
+      </div>
+      <div class="fr">
+        <button class="btn btn-g" style="flex:1;justify-content:center" onclick="dbAdd()">➕ Add to DB</button>
+        <button class="btn btn-p" style="flex:0" onclick="dbFromMap()">📍 Pick from map</button>
+      </div>
+    </div>
+    <div style="font-size:8px;font-weight:700;color:var(--ink3);font-family:var(--fm);margin:4px 0 2px">DATABASE (<span id="db-count2">0</span> entries)</div>
+    <div id="db-list" style="max-height:150px;overflow-y:auto;font-family:var(--fm);font-size:8px"></div>
+    <div class="fr" style="margin-top:4px">
+      <button class="btn" style="flex:1;justify-content:center;font-size:7px" onclick="dbExport()">💾 Export JSON</button>
+      <button class="btn" style="flex:1;justify-content:center;font-size:7px" onclick="dbImport()">📂 Import JSON</button>
+      <button class="btn btn-d" style="flex:0;font-size:7px" onclick="dbReset()">↺ Reset</button>
+    </div>
+    <input type="file" id="db-file" accept=".json" style="display:none" onchange="dbLoadFile(event)">
+  </div></div>
+
+  <!-- ROUTE -->
+  <div class="pn" style="flex:1;display:flex;flex-direction:column"><div class="ph" onclick="tog(this)">🗺 Route & Optimizer <span class="a">▼</span></div><div class="pb" style="flex:1;display:flex;flex-direction:column">
+    <div class="srch"><input id="sf" placeholder="Search ICAO / name / city..." autocomplete="off" oninput="srch(this.value)" onfocus="srch(this.value)"><div class="srl" id="srl"></div></div>
+    <div style="font-size:8px;color:var(--ink3);margin-bottom:3px;font-weight:600"><b id="dbn">0</b> airfields • <b id="asn">0</b> airspaces loaded</div>
+    <div id="as-warn"></div>
+    <div id="circuit-info" style="display:none"></div>
+    <div id="rl" style="flex:1;overflow-y:auto;min-height:30px"><div class="em">📍 Add waypoints</div></div>
+    <button class="opt-btn" onclick="optimizeRoute()">🧭 Optimize Route — Avoid Restricted Airspace</button>
+    <div class="scards" id="scs" style="display:none">
+      <div class="sc"><div class="sv" id="s-d">—</div><div class="sl">NM / km</div></div>
+      <div class="sc"><div class="sv" id="s-e">—</div><div class="sl">ETE</div></div>
+      <div class="sc"><div class="sv" id="s-f">—</div><div class="sl">Fuel L / gal</div></div>
+    </div>
+    <div id="fw" style="display:none"><div class="fbar"><div class="fbar-f" id="ff"></div></div><div class="fbar-l"><span id="fu">—</span><span id="fv">—</span></div></div>
+  </div></div>
+</div>
+
+<div class="mn">
+  <div class="mw">
+    <div id="map"></div>
+    <div class="ml">
+      <div class="lg"><div class="d" style="background:#007a3d"></div>APT</div>
+      <div class="lg"><div class="d" style="background:#c45500"></div>AVS</div>
+      <div class="lg"><div class="d" style="background:rgba(200,0,0,.3);border-color:#c41e1e"></div>R/P</div>
+      <div class="lg"><div class="d" style="background:rgba(0,100,200,.2);border-color:#0055d4"></div>CTR</div>
+      <div class="lg"><div class="d" style="background:rgba(100,50,150,.15);border-color:#7b2d8e"></div>TMA</div>
+      <div class="lg"><div class="d" style="background:#ff6600"></div>RP</div>
+    </div>
+    <div class="mc" id="map-ctrl">
+      <label><input type="checkbox" id="show-asp" onchange="toggleAirspace()"> Airspace overlay</label>
+      <label><input type="checkbox" id="show-rp" checked onchange="toggleRP()"> Report Pts</label>
+      <label><input type="checkbox" id="show-ofm" checked onchange="toggleOFM()"> OFM VFR Chart</label>
+      <label style="font-size:7px">Chart opacity <input type="range" id="ofm-opa" min="0" max="100" value="85" oninput="setOFMOpa(this.value)"></label>
+      <button class="btn btn-p" onclick="fetchOpenAIP()" style="font-size:7px;padding:2px 4px">↻ Fetch OpenAIP</button>
+      <button class="btn btn-g" onclick="openDeskAero()" style="font-size:7px;padding:2px 4px">🗺 Desk Aero NOTAM</button>
+    </div>
+    <!-- GPS TRACKING -->
+    <button class="gps-start-btn" id="gps-btn" onclick="toggleGPS()">📍 Start GPS Tracking</button>
+    <div class="gps-panel" id="gps-panel">
+      <div class="gps-handle" id="gps-handle">
+        <span class="gps-title">📍 GPS LIVE</span>
+        <div class="gps-btns">
+          <span onclick="gpsToggleMini()" title="Minimize/Expand">🗕</span>
+          <span onclick="toggleGPS()" title="Close">✕</span>
+        </div>
+      </div>
+      <div class="gps-fuel" id="gps-fuel">
+        <div class="gf-val" id="gps-fuel-val">— L</div>
+        <div class="gf-lbl">Fuel Remaining</div>
+      </div>
+      <div class="gps-body" id="gps-body">
+        <div class="gps-row">
+          <div class="gps-box next"><div class="gb-val" id="gps-next-dist">—</div><div class="gb-lbl">Next NM</div></div>
+          <div class="gps-box next"><div class="gb-val" id="gps-next-name">—</div><div class="gb-lbl">Next WPT</div></div>
+        </div>
+        <div class="gps-row">
+          <div class="gps-box"><div class="gb-val" id="gps-gs">—</div><div class="gb-lbl">GS kt</div></div>
+          <div class="gps-box"><div class="gb-val" id="gps-trk">—</div><div class="gb-lbl">TRK°</div></div>
+          <div class="gps-box"><div class="gb-val" id="gps-alt">—</div><div class="gb-lbl">Alt ft</div></div>
+        </div>
+        <div class="gps-row">
+          <div class="gps-box"><div class="gb-val" id="gps-ete-next">—</div><div class="gb-lbl">ETE Next</div></div>
+          <div class="gps-box"><div class="gb-val" id="gps-ete-dest">—</div><div class="gb-lbl">ETE Dest</div></div>
+          <div class="gps-box"><div class="gb-val" id="gps-endur">—</div><div class="gb-lbl">Endurance</div></div>
+        </div>
+        <div class="gps-bar"><div class="gps-bar-f" id="gps-bar-f" style="width:100%;background:var(--green)"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:7px;color:var(--ink3);font-weight:700">
+          <span id="gps-fuel-used">0 L burned</span>
+          <span id="gps-fuel-endur">— min endurance</span>
+        </div>
+        <div class="gps-pos" id="gps-pos">Waiting for GPS fix...</div>
+        <div style="margin-top:4px;display:flex;gap:3px">
+          <button class="btn btn-p" style="flex:1;justify-content:center;font-size:7px;padding:3px" onclick="gpsMarkPosition()">📌 Mark</button>
+          <button class="btn" style="flex:1;justify-content:center;font-size:7px;padding:3px" onclick="gpsCenterMap()">🎯 Center</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="bp" id="bottompanel">
+    <div class="bp-tog" onclick="togBottom()"><span>📋</span></div>
+    <div class="bph"><h3>📋 Nav Log</h3><div class="bpt"><div class="bt on" onclick="stab('nl',this)">Nav Log</div><div class="bt" onclick="stab('br',this)">Briefing</div></div></div>
+    <div class="bpc" id="t-nl"><table><thead><tr><th>Leg</th><th>TC°</th><th>WCA</th><th>MH°</th><th>NM/km</th><th>GS kt/kmh</th><th>ETE</th><th>Fuel L/gal</th><th>Rem L/gal</th><th>Airspace</th></tr></thead><tbody id="ntb"><tr><td colspan="10" class="em">Add 2+ waypoints</td></tr></tbody></table></div>
+    <div class="bpc" id="t-br" style="display:none"><div class="brief" id="bb"><div class="em">Press 📄 Brief</div></div></div>
+  </div>
+</div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// AIRFIELD DATABASE
+// ═══════════════════════════════════════════════════════
+const DB=[
+// ═══ PIEMONTE — Torino ═══
+{c:"LIMF",n:"Torino Caselle",ci:"Torino",la:45.2008,lo:7.6496,el:989,t:"A",rw:"18/36",f:"118.30",cir:"L"},
+{c:"LIMA",n:"Torino Aeritalia",ci:"Torino",la:45.0853,lo:7.6042,el:850,t:"A",rw:"15/33 1074m",f:"120.10",cir:"L"},
+{c:"—",n:"La Carolina",ci:"Caluso",la:45.2511,lo:7.8992,el:780,t:"V",rw:"17/35 600m",f:"122.10",cir:"L"},
+{c:"LIFM",n:"Mazzè Il Falco",ci:"Mazzè",la:45.2694,lo:7.9519,el:700,t:"V",rw:"04/22 650m",f:"130.00",cir:"L"},
+{c:"LIVV",n:"Moncucco",ci:"Cigliano",la:45.3447,lo:7.9191,el:750,t:"V",rw:"18/36 500m",f:"130.00",cir:"L"},
+{c:"—",n:"Candia Canavese",ci:"Candia",la:45.3297,lo:7.9000,el:800,t:"V",rw:"17/35 350m",f:"",cir:"L"},
+{c:"—",n:"Pegasus 2000",ci:"Busano",la:45.3097,lo:7.6653,el:850,t:"V",rw:"18/36 480m",f:"",cir:"L"},
+{c:"—",n:"Ivrea Montalto Dora",ci:"Montalto Dora",la:45.4872,lo:7.8417,el:820,t:"V",rw:"14/32 850m",f:"",cir:"L"},
+{c:"—",n:"Flying Tigers",ci:"Albiano d'Ivrea",la:45.4417,lo:7.9361,el:751,t:"V",rw:"14/32 350m",f:"",cir:"L"},
+{c:"—",n:"Canavese ULM",ci:"Castellamonte",la:45.3583,lo:7.7197,el:850,t:"V",rw:"06/24 370m",f:"",cir:"L"},
+{c:"—",n:"Lelika",ci:"Castagnole Piem.",la:44.8828,lo:7.5617,el:790,t:"V",rw:"17/35 500m",f:"",cir:"L"},
+{c:"—",n:"Cumiana",ci:"Cumiana",la:44.9390,lo:7.4289,el:700,t:"V",rw:"14/32 450m",f:"",cir:"L"},
+{c:"—",n:"Merlo Romano",ci:"Garzigliana",la:44.8343,lo:7.3647,el:800,t:"V",rw:"10/28 450m",f:"",cir:"L"},
+{c:"—",n:"Prealpi-Musinè",ci:"Pianezza",la:45.1239,lo:7.5222,el:900,t:"V",rw:"09/27 550m",f:"",cir:"L"},
+{c:"—",n:"Valsusa",ci:"Vaie",la:45.1126,lo:7.2884,el:900,t:"V",rw:"09/27 360m",f:"",cir:"L"},
+// ═══ PIEMONTE — Biella/Vercelli/Novara ═══
+{c:"LILE",n:"Biella Cerrione",ci:"Biella",la:45.4994,lo:8.1019,el:920,t:"A",rw:"16/34 1320m",f:"130.00",cir:"L"},
+{c:"LILI",n:"Vercelli",ci:"Vercelli",la:45.3099,lo:8.4179,el:436,t:"A",rw:"09/27",f:"130.10",cir:"L"},
+{c:"—",n:"Santhià",ci:"Santhià",la:45.3667,lo:8.1700,el:510,t:"V",rw:"08/26 450m",f:"",cir:"L"},
+{c:"—",n:"Rovasenda 2000",ci:"Brusnengo",la:45.5444,lo:8.2792,el:650,t:"V",rw:"15/33 280m",f:"",cir:"L"},
+{c:"—",n:"Casaleggio",ci:"Casaleggio Nov.",la:45.4956,lo:8.5253,el:500,t:"V",rw:"10/28 800m",f:"",cir:"L"},
+{c:"—",n:"Gianni Cerutti Fly",ci:"Vespolate",la:45.3497,lo:8.6483,el:380,t:"V",rw:"04/22 400m",f:"",cir:"L"},
+{c:"LIMN",n:"Cameri",ci:"Novara",la:45.5297,lo:8.6694,el:586,t:"A",rw:"16/34",f:"MIL",cir:"L"},
+// ═══ PIEMONTE — Alessandria/Asti/Cuneo ═══
+{c:"LILM",n:"Casale Monferrato",ci:"Casale M.",la:45.1106,lo:8.4564,el:377,t:"A",rw:"18/36 880m",f:"",cir:"L"},
+{c:"LIMR",n:"Novi Ligure",ci:"Novi L.",la:44.7794,lo:8.7867,el:558,t:"A",rw:"13/31 1050m",f:"130.00",cir:"L"},
+{c:"LILA",n:"Alessandria",ci:"Alessandria",la:44.9257,lo:8.6267,el:400,t:"A",rw:"03/21 640m",f:"",cir:"L"},
+{c:"—",n:"Francavilla Bisio",ci:"Francavilla B.",la:44.7264,lo:8.7292,el:500,t:"V",rw:"10/28 800m",f:"",cir:"L"},
+{c:"—",n:"Cascina Riccarda",ci:"Tortona",la:44.9383,lo:8.8658,el:400,t:"V",rw:"05/23 650m",f:"",cir:"L"},
+{c:"—",n:"Ploia",ci:"Tortona",la:44.8842,lo:8.7808,el:400,t:"V",rw:"04/22 420m",f:"",cir:"L"},
+{c:"—",n:"Acqui Terme",ci:"Acqui T.",la:44.6761,lo:8.5028,el:510,t:"V",rw:"10/28 520m",f:"",cir:"L"},
+{c:"—",n:"Boglietto",ci:"Costigliole d'Asti",la:44.7581,lo:8.1872,el:617,t:"V",rw:"10/28 500m",f:"130.00",cir:"L"},
+{c:"—",n:"Val Triversa",ci:"Cantarana",la:44.9122,lo:8.0347,el:600,t:"V",rw:"18/36 500m",f:"",cir:"L"},
+{c:"—",n:"Astigiana",ci:"Castello Annone",la:44.8883,lo:8.3553,el:500,t:"V",rw:"18/36 476m",f:"",cir:"L"},
+{c:"—",n:"Castelnuovo Don Bosco",ci:"Castelnuovo D.B.",la:45.0244,lo:7.9664,el:730,t:"V",rw:"15/33 700m",f:"130.00",cir:"L"},
+{c:"LIMW",n:"Aosta",ci:"Aosta",la:45.7385,lo:7.3687,el:1791,t:"A",rw:"09/27",f:"120.60",cir:"L"},
+{c:"LIMZ",n:"Cuneo Levaldigi",ci:"Cuneo",la:44.5456,lo:7.6208,el:1267,t:"A",rw:"03/21 2100m",f:"120.10",cir:"L"},
+{c:"—",n:"Envie",ci:"Envie",la:44.6839,lo:7.3667,el:900,t:"V",rw:"17/35 630m",f:"130.00",cir:"R"},
+{c:"—",n:"Bosio Guido",ci:"Castelletto Stura",la:44.4342,lo:7.6322,el:1000,t:"V",rw:"03/21 480m",f:"",cir:"L"},
+{c:"—",n:"Alpi Marittime",ci:"Pianfei",la:44.3917,lo:7.7264,el:900,t:"V",rw:"10/28 450m",f:"",cir:"L"},
+{c:"—",n:"Sant'Elia",ci:"Racconigi",la:44.7394,lo:7.7106,el:800,t:"V",rw:"18/36 360m",f:"",cir:"L"},
+// ═══ LOMBARDIA ═══
+{c:"LIMC",n:"Milano Malpensa",ci:"Milano",la:45.6306,lo:8.7231,el:768,t:"A",rw:"17L/35R",f:"119.00",cir:"L"},
+{c:"LIML",n:"Milano Linate",ci:"Milano",la:45.4454,lo:9.2778,el:353,t:"A",rw:"18/36",f:"118.10",cir:"L"},
+{c:"LIMB",n:"Milano Bresso",ci:"Bresso",la:45.5401,lo:9.2022,el:484,t:"A",rw:"18/36 1080m",f:"120.60",cir:"L"},
+{c:"LIME",n:"Bergamo Orio",ci:"Bergamo",la:45.6739,lo:9.7042,el:782,t:"A",rw:"10/28 2940m",f:"118.10",cir:"L"},
+{c:"LILV",n:"Valbrembo",ci:"Valbrembo",la:45.7200,lo:9.5944,el:700,t:"A",rw:"02/20 700m",f:"",cir:"L"},
+{c:"LILN",n:"Varese Venegono",ci:"Varese",la:45.7422,lo:8.8882,el:1050,t:"A",rw:"17/35",f:"118.55",cir:"R"},
+{c:"LIPO",n:"Brescia Montichiari",ci:"Brescia",la:45.4289,lo:10.3306,el:355,t:"A",rw:"14/32 2990m",f:"118.45",cir:"L"},
+{c:"LILR",n:"Cremona Migliaro",ci:"Cremona",la:45.1667,lo:10.0022,el:200,t:"A",rw:"11/29 650m",f:"",cir:"L"},
+{c:"LILB",n:"Alzate Brianza",ci:"Alzate B.",la:45.7696,lo:9.1623,el:1200,t:"A",rw:"03/21 600m",f:"",cir:"L"},
+{c:"—",n:"Cogliate",ci:"Cogliate",la:45.6393,lo:9.0660,el:600,t:"V",rw:"18/36 370m",f:"",cir:"L"},
+{c:"—",n:"Rosangeles",ci:"Rosate",la:45.3634,lo:9.0170,el:350,t:"V",rw:"16/34 600m",f:"",cir:"L"},
+{c:"—",n:"Baialupo",ci:"Cassano d'Adda",la:45.5529,lo:9.5057,el:400,t:"V",rw:"11/29 500m",f:"",cir:"L"},
+{c:"—",n:"Iseo Lake",ci:"Costa Volpino",la:45.8160,lo:10.0960,el:600,t:"V",rw:"01/19 500m",f:"",cir:"L"},
+{c:"—",n:"Bedizzole",ci:"Bedizzole",la:45.5189,lo:10.4500,el:400,t:"V",rw:"04/22 675m",f:"",cir:"L"},
+{c:"—",n:"Pradelle",ci:"Torbole Casaglia",la:45.4917,lo:10.1222,el:300,t:"V",rw:"08/26 620m",f:"",cir:"L"},
+{c:"—",n:"Santa Lucia Cizzago",ci:"Comezzano",la:45.4858,lo:9.9530,el:350,t:"V",rw:"01/19 650m",f:"",cir:"L"},
+{c:"—",n:"Curtatone",ci:"Curtatone",la:45.1000,lo:10.7544,el:100,t:"V",rw:"08/26 750m",f:"",cir:"L"},
+{c:"—",n:"Vigarolo",ci:"Borghetto Lod.",la:45.2175,lo:9.4672,el:250,t:"V",rw:"16/34 650m",f:"",cir:"L"},
+{c:"—",n:"Massalengo",ci:"Massalengo",la:45.2755,lo:9.4831,el:280,t:"V",rw:"18/36 700m",f:"",cir:"L"},
+{c:"—",n:"Kong",ci:"Monte Marenzo",la:45.7620,lo:9.4450,el:800,t:"V",rw:"18/36 380m",f:"",cir:"L"},
+{c:"LILG",n:"Vergiate",ci:"Vergiate",la:45.7126,lo:8.7007,el:700,t:"V",rw:"16/34 600m",f:"",cir:"L"},
+{c:"—",n:"Mezzana Bigli",ci:"Mezzana Bigli",la:45.0654,lo:8.8352,el:300,t:"V",rw:"03/21 800m",f:"",cir:"L"},
+{c:"LILY",n:"Idroscalo Como",ci:"Como",la:45.8139,lo:9.0700,el:700,t:"A",rw:"06/24 900m",f:"",cir:"L"},
+// ═══ VENETO ═══
+{c:"LIPZ",n:"Venezia M.Polo",ci:"Venezia",la:45.5053,lo:12.3519,el:7,t:"A",rw:"04/22",f:"120.20",cir:"L"},
+{c:"LIPX",n:"Verona Villafranca",ci:"Verona",la:45.3957,lo:10.8885,el:239,t:"A",rw:"04/22",f:"120.70",cir:"L"},
+{c:"LIPH",n:"Treviso",ci:"Treviso",la:45.6484,lo:12.1944,el:59,t:"A",rw:"07/25",f:"118.15",cir:"L"},
+{c:"LIPT",n:"Vicenza",ci:"Vicenza",la:45.5733,lo:11.5296,el:128,t:"A",rw:"05/23",f:"MIL",cir:"L"},
+{c:"LIPU",n:"Padova",ci:"Padova",la:45.3958,lo:11.8479,el:44,t:"A",rw:"04/22",f:"120.30",cir:"L"},
+{c:"—",n:"Asiago",ci:"Asiago",la:45.8878,lo:11.5261,el:3400,t:"V",rw:"18/36 800m",f:"",cir:"L"},
+{c:"—",n:"Cassola",ci:"Cassola",la:45.7411,lo:11.8067,el:308,t:"V",rw:"17/35 365m",f:"130.05",cir:"L"},
+{c:"—",n:"Rovigo",ci:"Rovigo",la:45.0697,lo:11.7856,el:20,t:"V",rw:"08/26 650m",f:"",cir:"L"},
+{c:"—",n:"A.Li. Caorle",ci:"Caorle",la:45.6119,lo:12.8144,el:7,t:"V",rw:"06/24 790m",f:"118.13",cir:"L"},
+{c:"—",n:"Feltre",ci:"Feltre",la:46.0190,lo:11.9180,el:820,t:"V",rw:"06/24 600m",f:"",cir:"L"},
+// ═══ FRIULI-VENEZIA GIULIA ═══
+{c:"LIPD",n:"Udine Campoformido",ci:"Udine",la:46.0317,lo:13.1868,el:305,t:"A",rw:"09/27",f:"MIL",cir:"L"},
+{c:"LIPS",n:"Aviano AB",ci:"Aviano",la:46.0319,lo:12.5965,el:410,t:"A",rw:"05/23",f:"MIL",cir:"L"},
+{c:"LIPA",n:"Trieste Ronchi",ci:"Trieste",la:45.8275,lo:13.4722,el:37,t:"A",rw:"09/27",f:"118.30",cir:"L"},
+// ═══ TRENTINO-ALTO ADIGE ═══
+{c:"LIPB",n:"Bolzano",ci:"Bolzano",la:46.4603,lo:11.3264,el:789,t:"A",rw:"01/19",f:"119.40",cir:"R"},
+{c:"LIDT",n:"Trento Mattarello",ci:"Trento",la:46.0214,lo:11.1242,el:610,t:"A",rw:"18/36 800m",f:"",cir:"L"},
+{c:"—",n:"Masera",ci:"Domodossola",la:46.1367,lo:8.3100,el:922,t:"V",rw:"18/36 600m",f:"130.00",cir:"L"},
+// ═══ EMILIA-ROMAGNA ═══
+{c:"LIPE",n:"Bologna Marconi",ci:"Bologna",la:44.5354,lo:11.2887,el:123,t:"A",rw:"12/30",f:"118.30",cir:"L"},
+{c:"LIPC",n:"Forlì",ci:"Forlì",la:44.1948,lo:12.0701,el:97,t:"A",rw:"12/30",f:"118.10",cir:"L"},
+{c:"LIPK",n:"Forlì Ridolfi",ci:"Forlì",la:44.1948,lo:12.0701,el:97,t:"A",rw:"12/30",f:"",cir:"L"},
+{c:"LIPR",n:"Rimini Miramare",ci:"Rimini",la:44.0203,lo:12.6117,el:40,t:"A",rw:"13/31",f:"118.10",cir:"L"},
+{c:"LIDR",n:"Ravenna",ci:"Ravenna",la:44.3639,lo:12.2250,el:20,t:"A",rw:"16/34 800m",f:"",cir:"L"},
+{c:"LIQS",n:"Parma",ci:"Parma",la:44.8244,lo:10.2964,el:161,t:"A",rw:"02/20",f:"118.30",cir:"L"},
+{c:"LIQR",n:"Reggio Emilia",ci:"Reggio E.",la:44.6986,lo:10.6628,el:150,t:"A",rw:"06/24",f:"",cir:"L"},
+{c:"—",n:"Modena Marzaglia",ci:"Modena",la:44.6428,lo:10.8008,el:117,t:"A",rw:"16/34 800m",f:"",cir:"L"},
+{c:"—",n:"Ferrara",ci:"Ferrara",la:44.8172,lo:11.6150,el:25,t:"A",rw:"12/30",f:"",cir:"L"},
+{c:"LIQP",n:"Piacenza",ci:"Piacenza",la:44.9131,lo:9.7233,el:140,t:"A",rw:"06/24",f:"MIL",cir:"L"},
+{c:"—",n:"Pavullo",ci:"Pavullo",la:44.3211,lo:10.8783,el:2200,t:"V",rw:"12/30 800m",f:"130.00",cir:"L"},
+{c:"—",n:"Alfonsine",ci:"Alfonsine",la:44.4969,lo:12.0561,el:15,t:"V",rw:"07/25 850m",f:"",cir:"L"},
+// ═══ LIGURIA ═══
+{c:"LIMJ",n:"Genova Sestri",ci:"Genova",la:44.4133,lo:8.8375,el:13,t:"A",rw:"10/28",f:"118.10",cir:"L"},
+{c:"—",n:"Villanova d'Albenga",ci:"Albenga",la:44.0506,lo:8.1275,el:46,t:"A",rw:"09/27 1430m",f:"",cir:"L"},
+// Centro + Sud + Isole airfields
+// Appended after existing ];
+// ═══ TOSCANA ═══
+{c:"LIRP",n:"Pisa San Giusto",ci:"Pisa",la:43.6839,lo:10.3927,el:6,t:"A",rw:"04/22",f:"118.70",cir:"L"},
+{c:"LIRQ",n:"Firenze Peretola",ci:"Firenze",la:43.8086,lo:11.2028,el:142,t:"A",rw:"05/23 1560m",f:"118.30",cir:"R"},
+{c:"LIRS",n:"Grosseto",ci:"Grosseto",la:42.7614,lo:11.0708,el:17,t:"A",rw:"03/21 2994m",f:"MIL",cir:"L"},
+{c:"LIRJ",n:"Marina di Campo",ci:"Isola d'Elba",la:42.7611,lo:10.2397,el:31,t:"A",rw:"16/34 949m",f:"118.90",cir:"L"},
+{c:"LIQB",n:"Arezzo",ci:"Arezzo",la:43.4553,lo:11.8472,el:810,t:"A",rw:"04/22 660m",f:"",cir:"L"},
+{c:"LIQQ",n:"Serristori",ci:"Castiglion Fior.",la:43.3317,lo:11.8586,el:800,t:"V",rw:"13/31 500m",f:"",cir:"L"},
+{c:"LIQF",n:"Sansepolcro",ci:"Sansepolcro",la:43.5617,lo:12.1525,el:900,t:"V",rw:"13/31 880m",f:"",cir:"L"},
+{c:"LIQG",n:"Cecina",ci:"Cecina",la:43.2850,lo:10.5236,el:50,t:"V",rw:"15/33 1000m",f:"",cir:"L"},
+{c:"—",n:"Punta Ala",ci:"Castiglione Pescaia",la:42.8417,lo:10.8222,el:10,t:"V",rw:"07/25 870m",f:"",cir:"L"},
+{c:"—",n:"Empoli",ci:"Empoli",la:43.7253,lo:10.9822,el:100,t:"V",rw:"10/28 330m",f:"",cir:"L"},
+{c:"—",n:"Collina",ci:"Borgo San Lorenzo",la:43.9873,lo:11.3884,el:800,t:"V",rw:"11/29 720m",f:"",cir:"L"},
+{c:"—",n:"Il Borro",ci:"Loro Ciuffenna",la:43.5408,lo:11.7025,el:700,t:"V",rw:"18/36 950m",f:"",cir:"L"},
+{c:"LIQL",n:"Lucca Tassignano",ci:"Lucca",la:43.8263,lo:10.5781,el:38,t:"A",rw:"17/35 900m",f:"",cir:"L"},
+{c:"—",n:"Siena Ampugnano",ci:"Siena",la:43.2561,lo:11.2550,el:630,t:"A",rw:"04/22 1000m",f:"",cir:"L"},
+// ═══ UMBRIA ═══
+{c:"LIRZ",n:"Perugia S.Egidio",ci:"Perugia",la:43.0959,lo:12.5132,el:697,t:"A",rw:"01/19 1400m",f:"118.10",cir:"L"},
+{c:"—",n:"Foligno",ci:"Foligno",la:42.9328,lo:12.7100,el:720,t:"A",rw:"12/30 1300m",f:"MIL",cir:"L"},
+{c:"LIRV",n:"Orvieto",ci:"Orvieto",la:42.7400,lo:12.1356,el:410,t:"A",rw:"14/32 800m",f:"",cir:"L"},
+{c:"—",n:"Terni Alvaro Leonardi",ci:"Terni",la:42.5469,lo:12.6194,el:400,t:"V",rw:"18/36 700m",f:"",cir:"L"},
+// ═══ MARCHE ═══
+{c:"LIPY",n:"Ancona Falconara",ci:"Ancona",la:43.6163,lo:13.3623,el:49,t:"A",rw:"04/22",f:"118.10",cir:"L"},
+{c:"—",n:"Fano",ci:"Fano",la:43.8261,lo:13.0494,el:30,t:"V",rw:"15/33 850m",f:"",cir:"L"},
+// ═══ ABRUZZO ═══
+{c:"LIBP",n:"Pescara",ci:"Pescara",la:42.4317,lo:14.1811,el:48,t:"A",rw:"04/22",f:"118.30",cir:"L"},
+{c:"LIQU",n:"L'Aquila Preturo",ci:"L'Aquila",la:42.3797,lo:13.3092,el:2200,t:"A",rw:"11/29 1060m",f:"",cir:"L"},
+{c:"—",n:"Avezzano",ci:"Avezzano",la:42.0306,lo:13.4344,el:2200,t:"V",rw:"14/32 800m",f:"",cir:"L"},
+// ═══ LAZIO ═══
+{c:"LIRF",n:"Roma Fiumicino",ci:"Roma",la:41.8045,lo:12.2520,el:14,t:"A",rw:"16L/34R",f:"118.70",cir:"L"},
+{c:"LIRA",n:"Roma Ciampino",ci:"Roma",la:41.7994,lo:12.5949,el:427,t:"A",rw:"15/33",f:"119.20",cir:"L"},
+{c:"LIRU",n:"Roma Urbe",ci:"Roma",la:41.9519,lo:12.4989,el:55,t:"A",rw:"16/34",f:"119.85",cir:"L"},
+{c:"LIRL",n:"Latina",ci:"Latina",la:41.5425,lo:12.9086,el:30,t:"A",rw:"12/30 1712m",f:"",cir:"L"},
+{c:"LIQN",n:"Rieti",ci:"Rieti",la:42.4272,lo:12.8517,el:1278,t:"A",rw:"15/33",f:"",cir:"L"},
+{c:"LIRB",n:"Viterbo",ci:"Viterbo",la:42.4300,lo:12.0639,el:990,t:"A",rw:"18/36",f:"MIL",cir:"L"},
+{c:"—",n:"Fly Center Aprilia",ci:"Aprilia",la:41.5472,lo:12.6708,el:100,t:"V",rw:"15/33 600m",f:"",cir:"L"},
+{c:"—",n:"Sabaudia",ci:"Sabaudia",la:41.3336,lo:13.0214,el:10,t:"V",rw:"03/21 630m",f:"",cir:"L"},
+// ═══ CAMPANIA ═══
+{c:"LIRN",n:"Napoli Capodichino",ci:"Napoli",la:40.8861,lo:14.2908,el:294,t:"A",rw:"06/24",f:"118.10",cir:"L"},
+{c:"LIRI",n:"Salerno C. Rossa",ci:"Salerno",la:40.6204,lo:14.9113,el:119,t:"A",rw:"05/23 2015m",f:"",cir:"L"},
+{c:"—",n:"Caserta Grazzanise",ci:"Grazzanise",la:41.0600,lo:14.0800,el:30,t:"A",rw:"06/24",f:"MIL",cir:"L"},
+{c:"—",n:"Capua",ci:"Capua",la:41.1200,lo:14.1500,el:50,t:"V",rw:"06/24 800m",f:"",cir:"L"},
+// ═══ PUGLIA ═══
+{c:"LIBD",n:"Bari Palese",ci:"Bari",la:41.1389,lo:16.7606,el:177,t:"A",rw:"07/25",f:"118.70",cir:"L"},
+{c:"LIBR",n:"Brindisi",ci:"Brindisi",la:40.6576,lo:17.9470,el:47,t:"A",rw:"13/31",f:"118.60",cir:"L"},
+{c:"LIBF",n:"Foggia Gino Lisa",ci:"Foggia",la:41.4329,lo:15.5350,el:265,t:"A",rw:"15/33",f:"118.30",cir:"L"},
+{c:"LIBG",n:"Taranto Grottaglie",ci:"Taranto",la:40.5175,lo:17.4033,el:215,t:"A",rw:"17/35",f:"118.70",cir:"L"},
+{c:"LIBL",n:"Galatina Lecce",ci:"Lecce",la:40.2394,lo:18.1333,el:156,t:"A",rw:"14/32",f:"MIL",cir:"L"},
+{c:"—",n:"Manduria Aerotre",ci:"Manduria",la:40.4486,lo:17.6233,el:89,t:"V",rw:"17/35 400m",f:"130.00",cir:"L"},
+// ═══ CALABRIA ═══
+{c:"LICA",n:"Lamezia Terme",ci:"Lamezia T.",la:38.9054,lo:16.2423,el:39,t:"A",rw:"10/28",f:"118.30",cir:"L"},
+{c:"LIBV",n:"Reggio Calabria",ci:"Reggio C.",la:38.0712,lo:15.6516,el:29,t:"A",rw:"15/33",f:"118.10",cir:"L"},
+{c:"LIBC",n:"Crotone S.Anna",ci:"Crotone",la:38.9972,lo:17.0802,el:522,t:"A",rw:"17/35",f:"",cir:"L"},
+// ═══ BASILICATA ═══
+{c:"—",n:"Pisticci",ci:"Pisticci",la:40.3983,lo:16.5958,el:400,t:"V",rw:"07/25 750m",f:"",cir:"L"},
+// ═══ MOLISE ═══
+{c:"—",n:"Campobasso",ci:"Campobasso",la:41.5850,lo:14.6450,el:1600,t:"V",rw:"09/27 600m",f:"",cir:"L"},
+// ═══ SICILIA ═══
+{c:"LICJ",n:"Palermo P.Raisi",ci:"Palermo",la:38.1760,lo:13.0910,el:65,t:"A",rw:"07/25",f:"118.10",cir:"L"},
+{c:"LICC",n:"Catania Fontanarossa",ci:"Catania",la:37.4668,lo:15.0664,el:39,t:"A",rw:"08/26",f:"118.70",cir:"L"},
+{c:"LICG",n:"Pantelleria",ci:"Pantelleria",la:36.8164,lo:11.9689,el:636,t:"A",rw:"08/26",f:"118.70",cir:"L"},
+{c:"LICP",n:"Lampedusa",ci:"Lampedusa",la:35.4979,lo:12.6181,el:70,t:"A",rw:"08/26",f:"",cir:"L"},
+{c:"LICT",n:"Trapani Birgi",ci:"Trapani",la:37.9114,lo:12.4880,el:25,t:"A",rw:"16/34",f:"MIL",cir:"L"},
+{c:"LICR",n:"Ragusa Comiso",ci:"Ragusa",la:36.9946,lo:14.6072,el:623,t:"A",rw:"05/23",f:"",cir:"L"},
+// ═══ SARDEGNA ═══
+{c:"LIEE",n:"Cagliari Elmas",ci:"Cagliari",la:39.2515,lo:9.0543,el:13,t:"A",rw:"14/32",f:"120.10",cir:"L"},
+{c:"LIEO",n:"Olbia Costa Smeralda",ci:"Olbia",la:40.8987,lo:9.5177,el:37,t:"A",rw:"05/23",f:"118.10",cir:"L"},
+{c:"LIED",n:"Alghero Fertilia",ci:"Alghero",la:40.6321,lo:8.2908,el:87,t:"A",rw:"02/20",f:"118.10",cir:"L"},
+{c:"LIET",n:"Tortolì Arbatax",ci:"Tortolì",la:39.9186,lo:9.6858,el:23,t:"A",rw:"08/26 1200m",f:"",cir:"L"},
+];
+
+// ═══════════════════════════════════════════════════════
+// AIRSPACE DATABASE — Italian R/D/P/CTR/TMA
+// type: R=Restricted, D=Danger, P=Prohibited, CTR, TMA
+// ceil: upper limit ft, floor: lower limit ft
+// polygon: [[lat,lon],...]
+// ═══════════════════════════════════════════════════════
+const AIRSPACES=[
+// ── CTR Torino (approximated from AIP AD2 LIMF) ──
+{name:"CTR Torino",type:"CTR",cls:"D",floor:0,ceil:4500,poly:[[45.32,7.35],[45.35,7.55],[45.33,7.72],[45.25,7.82],[45.15,7.82],[45.08,7.72],[45.05,7.55],[45.08,7.40],[45.15,7.32],[45.25,7.32]]},
+// ── Zone 25 Volpiano CTA ──
+{name:"Zone 25 Volpiano",type:"CTR",cls:"D",floor:0,ceil:3500,poly:[[45.22,7.68],[45.22,7.82],[45.12,7.82],[45.12,7.68]]},
+// ── LI-R58 Venaria Reale ──
+{name:"LI-R58 Venaria",type:"R",cls:"",floor:0,ceil:1500,poly:[[45.17,7.56],[45.17,7.65],[45.12,7.65],[45.12,7.56]]},
+// ── P228 Torino 2 (Prohibited Torino city center) ──
+{name:"LI-P228 Torino",type:"P",cls:"",floor:0,ceil:1500,poly:[[45.10,7.62],[45.10,7.72],[45.04,7.72],[45.04,7.62]]},
+// ── CTR Malpensa (large, from AIP) ──
+{name:"CTR Malpensa",type:"CTR",cls:"D",floor:0,ceil:3500,poly:[[45.78,8.48],[45.78,8.82],[45.72,8.92],[45.62,8.95],[45.52,8.92],[45.48,8.82],[45.48,8.55],[45.55,8.45],[45.65,8.42],[45.75,8.45]]},
+// ── LI-R8 Cameri (military, accurate) ──
+{name:"LI-R8 Cameri",type:"R",cls:"",floor:0,ceil:5000,poly:[[45.58,8.58],[45.58,8.78],[45.52,8.82],[45.46,8.78],[45.46,8.58],[45.52,8.54]]},
+// ── CTR Linate ──
+{name:"CTR Linate",type:"CTR",cls:"D",floor:0,ceil:2500,poly:[[45.52,9.15],[45.52,9.42],[45.38,9.42],[45.38,9.15]]},
+// ── CTR Bergamo ──
+{name:"CTR Bergamo",type:"CTR",cls:"D",floor:0,ceil:3500,poly:[[45.78,9.55],[45.78,9.85],[45.58,9.85],[45.58,9.55]]},
+// ── TMA Milano 1 (inner, 1500-FL095) ──
+{name:"TMA Milano 1",type:"TMA",cls:"A",floor:1500,ceil:9500,poly:[[45.95,8.15],[45.95,9.85],[45.15,9.85],[45.15,8.15]]},
+// ── TMA Milano 2 (outer, 3500-FL195) ──  
+{name:"TMA Milano 2",type:"TMA",cls:"A",floor:3500,ceil:19500,poly:[[46.15,7.50],[46.15,10.50],[44.55,10.50],[44.55,7.50]]},
+// ── Milano 10 CTA ──
+{name:"Milano 10 CTA",type:"CTR",cls:"D",floor:0,ceil:1500,poly:[[45.48,8.15],[45.48,8.45],[45.32,8.45],[45.32,8.15]]},
+// ── Zone 28 Mezzanile CTA ──
+{name:"Zone 28 Mezzanile",type:"CTR",cls:"D",floor:0,ceil:1500,poly:[[45.55,8.85],[45.55,9.10],[45.42,9.10],[45.42,8.85]]},
+// ── LI-P250 (S of Chivasso) ──
+{name:"LI-P250",type:"P",cls:"",floor:0,ceil:3000,poly:[[45.12,7.82],[45.12,7.98],[45.02,7.98],[45.02,7.82]]},
+// ── Casale Monf CTA / Milano 1 CTA ──
+{name:"Milano 1 CTA",type:"CTR",cls:"D",floor:0,ceil:1500,poly:[[45.18,8.30],[45.18,8.65],[44.98,8.65],[44.98,8.30]]},
+// ── CTR Genova ──
+{name:"CTR Genova",type:"CTR",cls:"D",floor:0,ceil:3500,poly:[[44.55,8.60],[44.55,9.10],[44.28,9.10],[44.28,8.60]]},
+// ── CTR Venezia ──
+{name:"CTR Venezia",type:"CTR",cls:"D",floor:0,ceil:2500,poly:[[45.65,12.05],[45.65,12.55],[45.35,12.55],[45.35,12.05]]},
+// ── CTR Bologna ──
+{name:"CTR Bologna",type:"CTR",cls:"D",floor:0,ceil:3500,poly:[[44.68,11.08],[44.68,11.52],[44.38,11.52],[44.38,11.08]]},
+// ── CTR Firenze ──
+{name:"CTR Firenze",type:"CTR",cls:"D",floor:0,ceil:3500,poly:[[43.98,11.00],[43.98,11.42],[43.68,11.42],[43.68,11.00]]},
+// ── CTR Pisa (mil+civ) ──
+{name:"CTR Pisa",type:"CTR",cls:"D",floor:0,ceil:3500,poly:[[43.88,10.18],[43.88,10.58],[43.52,10.58],[43.52,10.18]]},
+// ── CTR Roma (very large) ──
+{name:"CTR Roma",type:"CTR",cls:"D",floor:0,ceil:3500,poly:[[42.10,11.95],[42.10,12.85],[41.60,12.85],[41.60,11.95]]},
+{name:"TMA Roma",type:"TMA",cls:"A",floor:1500,ceil:9500,poly:[[42.35,11.65],[42.35,13.15],[41.45,13.15],[41.45,11.65]]},
+// ── CTR Napoli ──
+{name:"CTR Napoli",type:"CTR",cls:"D",floor:0,ceil:3500,poly:[[41.08,14.02],[41.08,14.52],[40.72,14.52],[40.72,14.02]]},
+// ── Zone R principali ──
+{name:"LI-R9 Viterbo",type:"R",cls:"",floor:0,ceil:5000,poly:[[42.52,11.78],[42.52,12.18],[42.32,12.18],[42.32,11.78]]},
+{name:"LI-R10 Guidonia",type:"R",cls:"",floor:0,ceil:3000,poly:[[42.12,12.58],[42.12,12.88],[41.88,12.88],[41.88,12.58]]},
+{name:"LI-R12 Decimomannu",type:"R",cls:"",floor:0,ceil:66000,poly:[[39.52,8.68],[39.52,9.12],[39.22,9.12],[39.22,8.68]]},
+{name:"LI-R14 Gioia Colle",type:"R",cls:"",floor:0,ceil:5000,poly:[[40.88,16.82],[40.88,17.12],[40.68,17.12],[40.68,16.82]]},
+{name:"LI-R46 Maniago",type:"R",cls:"",floor:0,ceil:20000,poly:[[46.28,12.52],[46.28,12.88],[46.08,12.88],[46.08,12.52]]},
+{name:"LI-R50 Grazzanise",type:"R",cls:"",floor:0,ceil:4000,poly:[[41.12,13.98],[41.12,14.22],[40.92,14.22],[40.92,13.98]]},
+// ── Danger ──
+{name:"LI-D70 Capo Teulada",type:"D",cls:"",floor:0,ceil:66000,poly:[[38.92,8.48],[38.92,8.92],[38.58,8.92],[38.58,8.48]]},
+{name:"LI-D76 Quirra",type:"D",cls:"",floor:0,ceil:66000,poly:[[39.62,9.48],[39.62,9.82],[39.32,9.82],[39.32,9.48]]},
+{name:"LI-D40 Taranto",type:"D",cls:"",floor:0,ceil:3000,poly:[[40.42,17.08],[40.42,17.52],[40.18,17.52],[40.18,17.08]]},
+// ── Prohibited ──
+{name:"LI-P1 Vaticano",type:"P",cls:"",floor:0,ceil:999,poly:[[41.912,12.438],[41.912,12.462],[41.898,12.462],[41.898,12.438]]},
+// ── Alessandria area (R zones along Torino-Bologna route) ──
+{name:"Freq Monitor Area Piemonte",type:"R",cls:"",floor:0,ceil:1500,poly:[[44.95,8.10],[44.95,8.65],[44.72,8.65],[44.72,8.10]]},
+// CTR Catania/Palermo
+{name:"CTR Catania",type:"CTR",cls:"D",floor:0,ceil:3500,poly:[[37.62,14.82],[37.62,15.28],[37.32,15.28],[37.32,14.82]]},
+{name:"CTR Palermo",type:"CTR",cls:"D",floor:0,ceil:3500,poly:[[38.32,12.88],[38.32,13.28],[38.02,13.28],[38.02,12.88]]},
+];
+
+// ═══════════════════════════════════════════════════════
+// VFR REPORTING POINTS — Real Italian landmarks
+// ═══════════════════════════════════════════════════════
+const RPOINTS=[
+// Piemonte
+{n:"Chivasso",la:45.1892,lo:7.8867},{n:"Ivrea",la:45.4667,lo:7.8758},{n:"Rivarolo C.",la:45.3333,lo:7.7167},
+{n:"Settimo T.",la:45.1381,lo:7.7678},{n:"Chieri",la:45.0128,lo:7.8233},{n:"Avigliana",la:45.0783,lo:7.3950},
+{n:"Susa",la:45.1372,lo:7.0489},{n:"Cuorgnè",la:45.3903,lo:7.6536},{n:"Pont Canavese",la:45.4181,lo:7.5961},
+{n:"Ciriè",la:45.2333,lo:7.6000},{n:"Rivoli",la:45.0711,lo:7.5153},{n:"Moncalieri",la:44.9833,lo:7.6833},
+// Lombardia
+{n:"Novara",la:45.4500,lo:8.6200},{n:"Gallarate",la:45.6597,lo:8.7917},{n:"Magenta",la:45.4678,lo:8.8836},
+{n:"Abbiategrasso",la:45.3964,lo:8.9183},{n:"Pavia",la:45.1847,lo:9.1600},{n:"Lodi",la:45.3147,lo:9.5019},
+{n:"Treviglio",la:45.5214,lo:9.5931},{n:"Crema",la:45.3633,lo:9.6867},{n:"Cremona",la:45.1333,lo:10.0167},
+{n:"Lecco",la:45.8533,lo:9.3903},{n:"Como",la:45.8081,lo:9.0853},
+// Veneto
+{n:"Vicenza",la:45.5494,lo:11.5478},{n:"Padova",la:45.4064,lo:11.8764},{n:"Rovigo",la:45.0700,lo:11.7900},
+{n:"Cittadella",la:45.6500,lo:11.7833},{n:"Bassano d.G.",la:45.7667,lo:11.7333},{n:"Chioggia",la:45.2167,lo:12.2833},
+// Emilia
+{n:"Piacenza",la:45.0525,lo:9.6928},{n:"Parma",la:44.8015,lo:10.3280},{n:"Reggio E.",la:44.6989,lo:10.6314},
+{n:"Modena",la:44.6475,lo:10.9256},{n:"Ravenna",la:44.4175,lo:12.2000},{n:"Cesena",la:44.1397,lo:12.2439},
+// Toscana
+{n:"Viareggio",la:43.8692,lo:10.2519},{n:"Pistoia",la:43.9336,lo:10.9236},{n:"Prato",la:43.8800,lo:11.0972},
+{n:"Empoli",la:43.7192,lo:10.9467},{n:"Volterra",la:43.4019,lo:10.8608},{n:"S.Gimignano",la:43.4678,lo:11.0431},
+// Lazio
+{n:"Orvieto",la:42.7186,lo:12.1117},{n:"Terni",la:42.5611,lo:12.6425},{n:"Viterbo",la:42.4178,lo:12.1086},
+{n:"Civitavecchia",la:42.0933,lo:11.7964},{n:"Latina",la:41.4675,lo:12.9042},{n:"Frosinone",la:41.6397,lo:13.3497},
+// Campania/Sud
+{n:"Caserta",la:41.0747,lo:14.3328},{n:"Benevento",la:41.1297,lo:14.7814},{n:"Salerno",la:40.6824,lo:14.7681},
+{n:"Foggia",la:41.4617,lo:15.5444},{n:"Barletta",la:41.3214,lo:16.2847},{n:"Taranto",la:40.4764,lo:17.2294},
+{n:"Lecce",la:40.3517,lo:18.1719},{n:"Cosenza",la:39.2990,lo:16.2534},{n:"Crotone",la:39.0808,lo:17.1275},
+// Sicilia
+{n:"Messina",la:38.1936,lo:15.5542},{n:"Siracusa",la:37.0755,lo:15.2866},{n:"Agrigento",la:37.3111,lo:13.5766},
+{n:"Trapani",la:38.0186,lo:12.5131},{n:"Enna",la:37.5636,lo:14.2717},
+// Sardegna
+{n:"Sassari",la:40.7259,lo:8.5592},{n:"Nuoro",la:40.3214,lo:9.3311},{n:"Oristano",la:39.9062,lo:8.5926},
+];
+
+// ═══ STATE ═══
+let route=[],map,poly,rM=[],rL=[],aM=[],aspLayers=[],rpLayers=[],ofmLayer=null,lastWx=null;
+
+// ═══ PRESETS ═══
+const P={avid:{t:85,f:16,c:72,v:3.2,alt:2500,maxalt:8000,nm:'Avid Flyer C'},c172:{t:110,f:32,c:200,v:3.2,alt:4500,maxalt:14000,nm:'C172'},p28a:{t:112,f:36,c:189,v:3.2,alt:4500,maxalt:11000,nm:'PA-28'}};
+function initP(){document.getElementById('pre').innerHTML=Object.entries(P).map(([k,v])=>`<div class="chip${k==='avid'?' on':''}" onclick="lp('${k}',this)">${v.nm}</div>`).join('')}
+function lp(k,el){const p=P[k];document.getElementById('a-t').value=p.t;document.getElementById('a-f').value=p.f;document.getElementById('a-c').value=p.c;document.getElementById('a-v').value=p.v;document.getElementById('a-alt').value=p.alt;document.getElementById('a-maxalt').value=p.maxalt;syncAllUnits();document.querySelectorAll('#pre .chip').forEach(c=>c.classList.remove('on'));el.classList.add('on');calc()}
+
+// ═══ MAP ═══
+let ofmBase=null;
+function initMap(){
+  if(typeof L==='undefined'){
+    document.getElementById('map').innerHTML='<div style="padding:20px;text-align:center;font-family:monospace;color:#c41e1e"><b>⚠ Leaflet not loaded</b><br>Open this file in a browser (Chrome/Safari) for full map functionality.<br><button onclick="location.reload()" style="margin-top:10px;padding:8px 16px;font-size:14px">↻ Reload</button></div>';
+    return;
+  }
+  map=L.map('map',{zoomControl:true,attributionControl:false}).setView([45.25,7.85],9);
+  
+  // Base layer: Carto Voyager (always works, all zoom levels)
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:18}).addTo(map);
+  
+  // OpenFlightMaps VFR overlay — try multiple AIRAC cycles
+  // OFM uses YYMM format, tiles available zoom 5-12
+  const now=new Date();const yy=now.getFullYear()%100;const mm=now.getMonth()+1;
+  const cycles=[];
+  for(let i=0;i<8;i++){
+    let m=mm-i,y=yy;while(m<=0){m+=12;y--;}
+    cycles.push(String(y).padStart(2,'0')+String(m).padStart(2,'0'));
+  }
+  
+  // Add OFM layers — they'll show blank tiles if cycle wrong, but won't crash
+  // Try each cycle with tileerror detection
+  loadOFMCycle(cycles,0);
+  
+  map.on('click',e=>{if(dbMapClick(e.latlng.lat,e.latlng.lng))return;addWP({c:'—',n:`WPT${(route.length+1).toString().padStart(2,'0')}`,ci:'Custom',la:e.latlng.lat,lo:e.latlng.lng,el:0,t:'W',rw:'',f:''})});
+  drawAF();drawAirspaces();drawRP();
+  document.getElementById('asn').textContent=AIRSPACES.length;
+}
+
+function loadOFMCycle(cycles,idx){
+  if(idx>=cycles.length){console.log('No OFM cycle found, using Carto only');return;}
+  const cyc=cycles[idx];
+  let errorCount=0,loadCount=0;
+  
+  const baseL=L.tileLayer(`https://nwy-tiles-api.prod.newaydata.com/tiles/{z}/{x}/{y}.jpg?path=${cyc}/base/latest`,{maxZoom:12,minZoom:5,errorTileUrl:''});
+  const aeroL=L.tileLayer(`https://nwy-tiles-api.prod.newaydata.com/tiles/{z}/{x}/{y}.png?path=${cyc}/aero/latest`,{maxZoom:12,minZoom:5,opacity:0.85,errorTileUrl:''});
+  
+  baseL.on('tileerror',function(){
+    errorCount++;
+    if(errorCount>3&&loadCount===0){
+      // This cycle doesn't work, try next
+      map.removeLayer(baseL);map.removeLayer(aeroL);
+      console.log('OFM cycle '+cyc+' failed, trying next...');
+      loadOFMCycle(cycles,idx+1);
+    }
+  });
+  baseL.on('tileload',function(){
+    loadCount++;
+    if(loadCount===1)console.log('OFM cycle '+cyc+' working!');
+  });
+  
+  baseL.addTo(map);
+  aeroL.addTo(map);
+  ofmBase=baseL;
+  ofmLayer=aeroL;
+}
+// Open Desk Aeronautico centered on current map view
+function openDeskAero(){
+  const c=map.getCenter();const z=map.getZoom();
+  window.open(`https://www.deskaeronautico.it/mappa/index.php?lat=${c.lat.toFixed(4)}&lon=${c.lng.toFixed(4)}&z=${z}`,'_blank');
+}
+
+function drawAF(){
+  aM.forEach(m=>map.removeLayer(m));aM=[];
+  DB.forEach(a=>{
+    const col=a.t==='A'?'#007a3d':'#c45500';
+    const rw=a.rw?a.rw.replace(/\s*\d+m$/,''):'';
+    const rwHtml=rw?`<br><span style="color:#006b7a;font-weight:900">RWY ${rw} ${(a.cir||'L')==='R'?'⟳R':'⟲L'}</span>`:'';
+    const customBadge=a._custom?'<br><span style="background:#0055d4;color:#fff;font-size:8px;padding:1px 4px;border-radius:2px">USER</span>':'';
+    const m=L.circleMarker([a.la,a.lo],{radius:a.t==='A'?8:7,color:a._custom?'#0055d4':'#fff',fillColor:col,fillOpacity:1,weight:3}).addTo(map);
+    m.bindTooltip(`<div style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700"><span style="color:${col}">${a.c!=='—'?a.c+' ':''}${a.n}</span><br><span style="color:#333">${a.ci} | ${a.el}ft</span>${rwHtml}${a.f?'<br><span style="color:#7b2d8e">'+a.f+'</span>':''} ${customBadge}</div>`,{direction:'top',offset:[0,-8]});
+    m.on('click',e=>{L.DomEvent.stopPropagation(e);addWP(a)});
+    aM.push(m);
+  });
+  document.getElementById('dbn').textContent=DB.length;
+  dbUpdateUI();
+}
+
+// ═══ DRAW AIRSPACES ═══
+function drawAirspaces(){
+  aspLayers.forEach(l=>map.removeLayer(l));aspLayers=[];
+  if(!document.getElementById('show-asp')?.checked)return;
+  const alt=+(document.getElementById('a-alt')?.value||2500);
+  AIRSPACES.forEach(a=>{
+    if(alt<a.floor)return;
+    const col=a.type==='R'||a.type==='P'?'#c41e1e':a.type==='D'?'#c45500':a.type==='CTR'?'#0055d4':'#7b2d8e';
+    const fill=a.type==='R'||a.type==='P'?'rgba(196,30,30,.2)':a.type==='D'?'rgba(196,85,0,.15)':a.type==='CTR'?'rgba(0,85,212,.1)':'rgba(123,45,142,.08)';
+    const dash=a.type==='R'||a.type==='P'?'':'6,4';
+    const l=L.polygon(a.poly,{color:col,fillColor:fill,fillOpacity:1,weight:2.5,dashArray:dash}).addTo(map);
+    l.bindTooltip(`<b style="font-family:var(--fm);color:${col}">${a.name}</b><br>${a.type} ${a.cls} ${a.floor}ft→${a.ceil>=19500?'FL195+':a.ceil+'ft'}`,{direction:'center'});
+    aspLayers.push(l);
+  });
+}
+
+// ═══ DRAW REPORTING POINTS ═══
+function drawRP(){
+  rpLayers.forEach(l=>map.removeLayer(l));rpLayers=[];
+  RPOINTS.forEach(p=>{
+    const m=L.circleMarker([p.la,p.lo],{radius:3,color:'#ff6600',fillColor:'#ff6600',fillOpacity:1,weight:1}).addTo(map);
+    const lbl=L.marker([p.la,p.lo],{icon:L.divIcon({className:'rp-lbl',html:p.n,iconAnchor:[-6,4]})}).addTo(map);
+    rpLayers.push(m,lbl);
+  });
+}
+
+function toggleAirspace(){const show=document.getElementById('show-asp').checked;aspLayers.forEach(l=>{if(show)l.addTo(map);else map.removeLayer(l)})}
+function toggleRP(){const show=document.getElementById('show-rp').checked;rpLayers.forEach(l=>{if(show)l.addTo(map);else map.removeLayer(l)})}
+function toggleOFM(){
+  const show=document.getElementById('show-ofm').checked;
+  if(ofmLayer){if(show){if(!map.hasLayer(ofmLayer))ofmLayer.addTo(map)}else{map.removeLayer(ofmLayer)}}
+  if(ofmBase){if(show){if(!map.hasLayer(ofmBase))ofmBase.addTo(map)}else{map.removeLayer(ofmBase)}}
+}
+function setOFMOpa(v){const o=v/100;if(ofmLayer)ofmLayer.setOpacity(o);if(ofmBase)ofmBase.setOpacity(o)}
+
+// ═══ GEOMETRY UTILS ═══
+function ptInPoly(pt,poly){
+  let inside=false;
+  for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+    const xi=poly[i][0],yi=poly[i][1],xj=poly[j][0],yj=poly[j][1];
+    if(((yi>pt[1])!==(yj>pt[1]))&&(pt[0]<(xj-xi)*(pt[1]-yi)/(yj-yi)+xi))inside=!inside;
+  }
+  return inside;
+}
+function segIntersectsPoly(a,b,poly){
+  for(let i=0;i<poly.length;i++){
+    const c=poly[i],d=poly[(i+1)%poly.length];
+    if(segIntersect(a,b,c,d))return true;
+  }
+  return false;
+}
+function segIntersect(p1,p2,p3,p4){
+  const d=(p4[1]-p3[1])*(p2[0]-p1[0])-(p4[0]-p3[0])*(p2[1]-p1[1]);
+  if(Math.abs(d)<1e-10)return false;
+  const ua=((p4[0]-p3[0])*(p1[1]-p3[1])-(p4[1]-p3[1])*(p1[0]-p3[0]))/d;
+  const ub=((p2[0]-p1[0])*(p1[1]-p3[1])-(p2[1]-p1[1])*(p1[0]-p3[0]))/d;
+  return ua>=0&&ua<=1&&ub>=0&&ub<=1;
+}
+function polyCenter(poly){
+  let la=0,lo=0;poly.forEach(p=>{la+=p[0];lo+=p[1]});
+  return[la/poly.length,lo/poly.length];
+}
+
+// ═══ CHECK ROUTE AGAINST AIRSPACES ═══
+function checkAirspaceConflicts(){
+  const alt=+(document.getElementById('a-alt').value||2500);
+  const conflicts=[];
+  for(let i=0;i<route.length-1;i++){
+    const a=[route[i].la,route[i].lo],b=[route[i+1].la,route[i+1].lo];
+    AIRSPACES.forEach(asp=>{
+      if(alt<asp.floor)return; // below airspace, ok
+      if(alt>asp.ceil)return; // above airspace, ok
+      if(segIntersectsPoly(a,b,asp.poly)||ptInPoly(a,asp.poly)||ptInPoly(b,asp.poly)){
+        conflicts.push({leg:i,asp});
+      }
+    });
+  }
+  return conflicts;
+}
+
+// ═══ ROUTE OPTIMIZER — Airspace Avoidance ═══
+function optimizeRoute(){
+  if(route.length<2){alert('Add at least 2 waypoints');return}
+  const alt=+(document.getElementById('a-alt').value||2500);
+  const maxPasses=8;
+  let totalAdded=0;
+
+  for(let pass=0;pass<maxPasses;pass++){
+    const conflicts=checkAirspaceConflicts();
+    if(conflicts.length===0)break;
+
+    // Process first conflict found
+    const c=conflicts[0];
+    const leg=c.leg;
+    const asp=c.asp;
+    const a=[route[leg].la,route[leg].lo];
+    const b=[route[leg+1].la,route[leg+1].lo];
+
+    const bypassPts=findBypass(a,b,asp.poly,asp.name);
+    if(bypassPts.length===0){
+      // Can't bypass — warn and skip
+      alert(`Cannot find bypass for ${asp.name}. Check altitude or plan manually.`);
+      break;
+    }
+
+    // Insert bypass waypoints into route
+    const inserts=bypassPts.map(bp=>{
+      const rp=findNearestRP(bp[0],bp[1]);
+      return {c:'—',n:rp?rp.n:`BYP-${asp.name.replace(/[^A-Za-z0-9]/g,'').slice(0,10)}`,ci:`Bypass ${asp.name}`,la:bp[0],lo:bp[1],el:0,t:'W',rw:'',f:''};
+    });
+    route.splice(leg+1,0,...inserts);
+    totalAdded+=inserts.length;
+  }
+
+  updR();calc();
+  if(totalAdded>0){
+    const remaining=checkAirspaceConflicts();
+    if(remaining.length>0){
+      // Find minimum altitude to clear ALL remaining conflicts
+      const suggestion=suggestAltitude(remaining);
+      alert(`Added ${totalAdded} bypass points.\n\n⚠ ${remaining.length} conflict(s) remain:\n${remaining.map(c=>`• ${c.asp.name} (${c.asp.type} ${c.asp.floor}→${c.asp.ceil}ft)`).join('\n')}\n\n${suggestion}`);
+    } else {
+      alert(`Route optimized! ${totalAdded} bypass points added. Route is now clear at ${alt}ft.\n\n⚠ VERIFY ON OFFICIAL CHART BEFORE FLIGHT.`);
+    }
+  } else {
+    const remaining=checkAirspaceConflicts();
+    if(remaining.length>0){
+      const suggestion=suggestAltitude(remaining);
+      alert(`No bypass possible laterally.\n\n${remaining.map(c=>`• ${c.asp.name} (${c.asp.type} ${c.asp.floor}→${c.asp.ceil}ft)`).join('\n')}\n\n${suggestion}`);
+    } else {
+      alert(`Route is clear of restricted airspace at ${alt}ft.`);
+    }
+  }
+}
+
+// ═══ ALTITUDE SUGGESTION ═══
+function suggestAltitude(conflicts){
+  const alt=+(document.getElementById('a-alt').value||2500);
+  const maxAlt=+(document.getElementById('a-maxalt').value||8000);
+  let lines=[];
+
+  conflicts.forEach(c=>{
+    const asp=c.asp;
+    const overAlt=asp.ceil+500;
+    const vfrOver=nextVFRAlt(overAlt,c.leg);
+    const underAlt=asp.floor>500?asp.floor-500:0;
+    const vfrUnder=underAlt>0?prevVFRAlt(underAlt,c.leg):0;
+
+    lines.push(`── ${asp.name} (${asp.type} ${asp.floor}→${asp.ceil}ft) ──`);
+
+    // Option A: Fly OVER
+    if(vfrOver<=maxAlt){
+      lines.push(`  ✈ FLY OVER: ${vfrOver}ft (above ceiling ${asp.ceil}ft)`);
+    } else if(asp.ceil<19500){
+      lines.push(`  ⛔ Cannot fly over: need ${vfrOver}ft but max aircraft alt is ${maxAlt}ft`);
+    } else {
+      lines.push(`  ⛔ Cannot fly over: ceiling ${asp.ceil>=19500?'FL195+':asp.ceil+'ft'}`);
+    }
+
+    // Option B: Fly UNDER (if floor > GND)
+    if(asp.floor>=1000 && vfrUnder>=500){
+      lines.push(`  ↓ FLY UNDER: ${vfrUnder}ft (below floor ${asp.floor}ft)`);
+      if(vfrUnder<1500) lines.push(`    ⚠ Caution: low altitude — check terrain/obstacles!`);
+    } else if(asp.floor>0){
+      lines.push(`  ↓ Below not practical (floor ${asp.floor}ft, min safe too low)`);
+    }
+
+    // Option C: Route around
+    if(vfrOver>maxAlt && (asp.floor<1000||vfrUnder<500)){
+      lines.push(`  🧭 MUST ROUTE AROUND laterally`);
+    }
+    lines.push('');
+  });
+
+  // Summary recommendation
+  const bestOptions=[];
+  conflicts.forEach(c=>{
+    const asp=c.asp;
+    const vfrOver=nextVFRAlt(asp.ceil+500,c.leg);
+    const vfrUnder=asp.floor>=1000?prevVFRAlt(asp.floor-500,c.leg):0;
+
+    if(vfrOver<=maxAlt){
+      bestOptions.push({action:'over',alt:vfrOver,name:asp.name});
+    } else if(vfrUnder>=500 && asp.floor>=1000){
+      bestOptions.push({action:'under',alt:vfrUnder,name:asp.name});
+    } else {
+      bestOptions.push({action:'around',name:asp.name});
+    }
+  });
+
+  lines.push('═══ RECOMMENDATION ═══');
+  const overs=bestOptions.filter(b=>b.action==='over');
+  const unders=bestOptions.filter(b=>b.action==='under');
+  const arounds=bestOptions.filter(b=>b.action==='around');
+
+  if(overs.length>0){
+    const maxOver=Math.max(...overs.map(o=>o.alt));
+    lines.push(`✈ Climb to ${maxOver}ft to clear: ${overs.map(o=>o.name).join(', ')}`);
+  }
+  if(unders.length>0){
+    const minUnder=Math.min(...unders.map(u=>u.alt));
+    lines.push(`↓ Descend to ${minUnder}ft to pass under: ${unders.map(u=>u.name).join(', ')}`);
+  }
+  if(arounds.length>0){
+    lines.push(`🧭 Route around: ${arounds.map(a=>a.name).join(', ')}`);
+  }
+  lines.push('');
+  lines.push(`Aircraft max: ${maxAlt}ft | VFR semicircular rule applied`);
+
+  return lines.join('\n');
+}
+
+// Next VFR altitude ABOVE a minimum
+function nextVFRAlt(minAlt,legIdx){
+  let track=90;
+  if(legIdx!==undefined && legIdx<route.length-1)
+    track=brg(route[legIdx].la,route[legIdx].lo,route[legIdx+1].la,route[legIdx+1].lo);
+  const isEast=(track>=0 && track<180);
+  const alts=[];
+  for(let t=1;t<=19;t++){
+    if(isEast && t%2===1) alts.push(t*1000+500);
+    if(!isEast && t%2===0) alts.push(t*1000+500);
+  }
+  for(const a of alts) if(a>=minAlt) return a;
+  return minAlt;
+}
+
+// Previous VFR altitude BELOW a maximum
+function prevVFRAlt(maxAlt,legIdx){
+  let track=90;
+  if(legIdx!==undefined && legIdx<route.length-1)
+    track=brg(route[legIdx].la,route[legIdx].lo,route[legIdx+1].la,route[legIdx+1].lo);
+  const isEast=(track>=0 && track<180);
+  const alts=[];
+  for(let t=19;t>=1;t--){
+    if(isEast && t%2===1) alts.push(t*1000+500);
+    if(!isEast && t%2===0) alts.push(t*1000+500);
+  }
+  for(const a of alts) if(a<=maxAlt) return a;
+  return 500;
+}
+
+function findBypass(a,b,poly,aspName){
+  const ctr=polyCenter(poly);
+  const mid=[(a[0]+b[0])/2,(a[1]+b[1])/2];
+  const offset=0.06; // ~6km safety buffer
+
+  // Strategy: test bypass on both sides of the polygon
+  // Generate offset points for each vertex
+  const candidates=[];
+  for(let i=0;i<poly.length;i++){
+    const v=poly[i];
+    const vdx=v[0]-ctr[0], vdy=v[1]-ctr[1];
+    const len=Math.sqrt(vdx*vdx+vdy*vdy);
+    if(len<0.001)continue;
+    const ox=v[0]+(vdx/len)*offset;
+    const oy=v[1]+(vdy/len)*offset;
+    // Distance from this bypass point to the straight line a→b
+    const detour=distToLine(ox,oy,a,b);
+    candidates.push({la:ox,lo:oy,detour,side:((ox-mid[0])*(b[1]-a[1])-(oy-mid[1])*(b[0]-a[0]))>0?'L':'R'});
+  }
+
+  // Try single-point bypass first (pick closest to route that doesn't conflict)
+  candidates.sort((x,y)=>x.detour-y.detour);
+  for(const c of candidates){
+    const pt=[c.la,c.lo];
+    if(!ptInPoly(pt,poly)&&!segIntersectsAny(a,pt)&&!segIntersectsAny(pt,b)){
+      return [pt];
+    }
+  }
+
+  // Try two-point bypass (same side of polygon)
+  const leftPts=candidates.filter(c=>c.side==='L').slice(0,3);
+  const rightPts=candidates.filter(c=>c.side==='R').slice(0,3);
+
+  for(const side of [leftPts,rightPts]){
+    if(side.length<2)continue;
+    // Sort by longitude to maintain route direction
+    const sorted=[...side].sort((x,y)=>{
+      const dxa=Math.abs(x.la-a[0])+Math.abs(x.lo-a[1]);
+      const dxb=Math.abs(y.la-a[0])+Math.abs(y.lo-a[1]);
+      return dxa-dxb;
+    });
+    const p1=[sorted[0].la,sorted[0].lo];
+    const p2=[sorted[1].la,sorted[1].lo];
+    if(!ptInPoly(p1,poly)&&!ptInPoly(p2,poly)&&
+       !segIntersectsAny(a,p1)&&!segIntersectsAny(p1,p2)&&!segIntersectsAny(p2,b)){
+      return [p1,p2];
+    }
+  }
+
+  return [];
+}
+
+// Check segment against ALL restricted airspaces (R, P, D)
+function segIntersectsAny(a,b){
+  const alt=+(document.getElementById('a-alt').value||2500);
+  for(const asp of AIRSPACES){
+    if(asp.type!=='R'&&asp.type!=='P'&&asp.type!=='D')continue;
+    if(alt<asp.floor||alt>asp.ceil)continue;
+    if(segIntersectsPoly(a,b,asp.poly)||ptInPoly(a,asp.poly)||ptInPoly(b,asp.poly))return true;
+  }
+  return false;
+}
+
+function distToLine(px,py,a,b){
+  const dx=b[0]-a[0],dy=b[1]-a[1];
+  const len=Math.sqrt(dx*dx+dy*dy);
+  if(len<1e-10)return Math.sqrt((px-a[0])**2+(py-a[1])**2);
+  return Math.abs(dx*(a[1]-py)-dy*(a[0]-px))/len;
+}
+
+function findNearestRP(la,lo){
+  let best=null,bestD=Infinity;
+  RPOINTS.forEach(rp=>{
+    const d=Math.sqrt((rp.la-la)**2+(rp.lo-lo)**2);
+    if(d<bestD&&d<0.15){bestD=d;best=rp} // within ~15km
+  });
+  return best;
+}
+
+// ═══ OPENAIP LIVE FETCH ═══
+async function fetchOpenAIP(){
+  const key=prompt('Enter your OpenAIP API key (free at openaip.net):');
+  if(!key)return;
+  try{
+    const r=await fetch(`https://api.core.openaip.net/api/airspaces?country=IT&type=0,1,2,3,4,5&limit=200&apiKey=${key}`);
+    const data=await r.json();
+    if(data.items){
+      let count=0;
+      data.items.forEach(item=>{
+        if(item.geometry&&item.geometry.coordinates){
+          const coords=item.geometry.coordinates[0].map(c=>[c[1],c[0]]);
+          const typeMap={0:'CTR',1:'TMA',2:'R',3:'D',4:'P',5:'CTR'};
+          AIRSPACES.push({
+            name:item.name||'Unknown',
+            type:typeMap[item.type]||'CTR',
+            cls:item.icaoClass||'',
+            floor:item.lowerLimit?.value||0,
+            ceil:item.upperLimit?.value||9999,
+            poly:coords
+          });
+          count++;
+        }
+      });
+      drawAirspaces();
+      document.getElementById('asn').textContent=AIRSPACES.length;
+      alert(`Loaded ${count} airspaces from OpenAIP`);
+    }
+  }catch(e){alert('Error: '+e.message+'\nCheck API key and try again.')}
+}
+
+// ═══ ROUTE MANAGEMENT ═══
+function addWP(a){route.push({...a});updR();calc();document.getElementById('srl').classList.remove('vis');document.getElementById('sf').value='';autoWxS();if(window.innerWidth<=900)document.getElementById('sidebar').classList.remove('open')}
+function rmWP(i){route.splice(i,1);updR();calc()}
+function clrR(){route=[];updR();calc()}
+// ═══ RUNWAY & CIRCUIT PATTERN ═══
+function parseRunway(rwStr){
+  // Parse "17/35", "17L/35R", "17/35 400m", "08/26" etc
+  if(!rwStr) return null;
+  const m=rwStr.match(/(\d{1,2})[LRC]?\s*\/\s*(\d{1,2})/);
+  if(!m) return null;
+  return {rw1:parseInt(m[1]),rw2:parseInt(m[2]),hdg1:parseInt(m[1])*10,hdg2:parseInt(m[2])*10};
+}
+
+function calcCircuit(rwStr,windDir,windSpd,cirDir){
+  const rw=parseRunway(rwStr);
+  if(!rw) return null;
+  
+  // Determine active runway: land INTO the wind
+  // With no wind (0kt), default to lower-numbered runway
+  let activeNum,activeHdg,recipNum,recipHdg;
+  if(windSpd<1){
+    activeNum=rw.rw1;activeHdg=rw.hdg1;recipNum=rw.rw2;recipHdg=rw.hdg2;
+  } else {
+    const diff1=Math.abs(((windDir-rw.hdg1)+540)%360-180);
+    const diff2=Math.abs(((windDir-rw.hdg2)+540)%360-180);
+    if(diff1<=diff2){
+      activeNum=rw.rw1;activeHdg=rw.hdg1;recipNum=rw.rw2;recipHdg=rw.hdg2;
+    } else {
+      activeNum=rw.rw2;activeHdg=rw.hdg2;recipNum=rw.rw1;recipHdg=rw.hdg1;
+    }
+  }
+  
+  // Crosswind component
+  const angleDiff=((windDir-activeHdg)+360)%360;
+  const angleDiffRad=angleDiff*Math.PI/180;
+  const headwind=windSpd>=1?Math.round(windSpd*Math.cos(angleDiffRad)):0;
+  const crosswind=windSpd>=1?Math.round(windSpd*Math.abs(Math.sin(angleDiffRad))):0;
+  const crossSide=Math.sin(angleDiffRad)>0?'R':'L';
+  
+  // Circuit pattern legs (standard left or right)
+  const dir=cirDir||'L';
+  const turn=dir==='L'?-90:90;
+  
+  return {
+    activeNum,activeHdg,recipNum,recipHdg,
+    headwind,crosswind,crossSide,
+    dir,
+    legs:{
+      upwind:activeHdg,
+      crosswind_leg:(activeHdg+turn+360)%360,
+      downwind:(activeHdg+180)%360,
+      base:(activeHdg+180+turn+360)%360,
+      final:activeHdg
+    },
+    label:`RWY ${String(activeNum).padStart(2,'0')}`
+  };
+}
+
+function updateCircuitInfo(){
+  const el=document.getElementById('circuit-info');
+  const hRwy=document.getElementById('h-rwy');
+  if(route.length<1){el.style.display='none';hRwy.innerHTML='—';return}
+  
+  const wd=+(document.getElementById('w-d').value)||0;
+  const ws=+(document.getElementById('w-s').value)||0;
+  
+  // Find DEP and ARR with runway data
+  const dep=route[0];
+  const arr=route.length>=2?route[route.length-1]:null;
+  const depDB=DB.find(d=>(d.c===dep.c&&d.c!=='—')||d.n===dep.n);
+  const arrDB=arr?DB.find(d=>(d.c===arr.c&&d.c!=='—')||d.n===arr.n):null;
+  
+  // Top bar runway display
+  let rwyParts=[];
+  if(depDB&&parseRunway(depDB.rw)){
+    const rwRaw=depDB.rw.replace(/\s*\d+m$/,'');
+    const cirDir=depDB.cir||'L';
+    const cirIcon=cirDir==='R'?'⟳':'⟲';
+    if(ws>=1){
+      const c=calcCircuit(depDB.rw,wd,ws,depDB.cir);
+      if(c) rwyParts.push(fmtRwyPair(rwRaw,c.activeNum,cirDir));
+    } else {
+      rwyParts.push(`${rwRaw} ${cirIcon}`);
+    }
+  }
+  if(arrDB&&parseRunway(arrDB.rw)&&arrDB!==depDB){
+    const rwRaw=arrDB.rw.replace(/\s*\d+m$/,'');
+    const cirDir=arrDB.cir||'L';
+    const cirIcon=cirDir==='R'?'⟳':'⟲';
+    if(ws>=1){
+      const c=calcCircuit(arrDB.rw,wd,ws,arrDB.cir);
+      if(c) rwyParts.push(fmtRwyPair(rwRaw,c.activeNum,cirDir));
+    } else {
+      rwyParts.push(`${rwRaw} ${cirIcon}`);
+    }
+  }
+  hRwy.innerHTML=rwyParts.length?rwyParts.join(' → '):'—';
+  
+  // Sidebar circuit cards
+  let html='';
+  if(depDB){
+    if(parseRunway(depDB.rw)){
+      const c=calcCircuit(depDB.rw,wd,ws,depDB.cir);
+      if(c) html+=renderCircuitCard('DEP',depDB,c);
+    } else {
+      html+=`<div class="cir-card"><div class="cir-head"><span class="cir-apt">DEP ${depDB.c!=='—'?depDB.c:depDB.n}</span><span style="color:var(--orange);font-size:9px;font-weight:700">Pista: ${depDB.rw||'N/A'}</span></div><div class="cir-wind">Heading non specificato — verificare AIP/QNHFly. Aggiungi XX/YY nel DB Editor.</div></div>`;
+    }
+  }
+  if(arrDB&&arrDB!==depDB){
+    if(parseRunway(arrDB.rw)){
+      const c=calcCircuit(arrDB.rw,wd,ws,arrDB.cir);
+      if(c) html+=renderCircuitCard('ARR',arrDB,c);
+    } else {
+      html+=`<div class="cir-card"><div class="cir-head"><span class="cir-apt">ARR ${arrDB.c!=='—'?arrDB.c:arrDB.n}</span><span style="color:var(--orange);font-size:9px;font-weight:700">Pista: ${arrDB.rw||'N/A'}</span></div><div class="cir-wind">Heading non specificato — verificare AIP/QNHFly. Aggiungi XX/YY nel DB Editor.</div></div>`;
+    }
+  }
+  
+  if(html){el.style.display='block';el.innerHTML=html}
+  else{el.style.display='none';el.innerHTML=''}
+}
+
+// Format runway pair: "17/35" → "<b>17</b>/35 L" or "17/<b>35</b> L"
+function fmtRwyPair(rwStr,activeNum,dir){
+  // Extract the two numbers from "17/35" or "17L/35R"
+  const m=rwStr.match(/(\d{1,2}[LRC]?)\s*\/\s*(\d{1,2}[LRC]?)/);
+  if(!m) return rwStr;
+  const n1=m[1],n2=m[2];
+  const num1=parseInt(n1),num2=parseInt(n2);
+  const cirIcon=dir==='R'?'⟳':'⟲';
+  if(activeNum===num1){
+    return `<span style="color:#ffd166;font-size:13px">${n1}</span>/${n2} ${cirIcon}`;
+  } else {
+    return `${n1}/<span style="color:#ffd166;font-size:13px">${n2}</span> ${cirIcon}`;
+  }
+}
+
+function renderCircuitCard(label,db,c){
+  const ws=+(document.getElementById('w-s').value)||0;
+  let xwClass='xw-ok',xwLabel='OK';
+  if(c.crosswind>12){xwClass='xw-crit';xwLabel='STRONG'}
+  else if(c.crosswind>7){xwClass='xw-warn';xwLabel='MODERATE'}
+  
+  const hwLabel=ws<1?'CALM':c.headwind>=0?`↑${Math.abs(c.headwind)}kt HW`:`↓${Math.abs(c.headwind)}kt TW`;
+  const name=db.c!=='—'?db.c:db.n;
+  const freq=db.f?` • ${db.f}`:'';
+  const windLine=ws<1?'Wind: CALM — default RWY shown':`Wind ${wd360(+(document.getElementById('w-d').value))}°/${ws}kt → ${hwLabel} | X-wind: <span class="cir-xw ${xwClass}">${c.crosswind}kt ${c.crossSide} ${xwLabel}</span>`;  
+  return `<div class="cir-card">
+    <div class="cir-head">
+      <span class="cir-apt">${label} ${name}${freq}</span>
+      <span class="cir-rwy">▶ ${c.label} ${c.dir==='R'?'⟳ RIGHT':'⟲ LEFT'}</span>
+    </div>
+    <div class="cir-legs">
+      <div class="cir-leg"><b>${pad3(c.legs.upwind)}°</b><small>Upwind</small></div>
+      <div class="cir-leg"><b>${pad3(c.legs.crosswind_leg)}°</b><small>Crosswind</small></div>
+      <div class="cir-leg act"><b>${pad3(c.legs.downwind)}°</b><small>Sottovento</small></div>
+      <div class="cir-leg"><b>${pad3(c.legs.base)}°</b><small>Base</small></div>
+      <div class="cir-leg"><b>${pad3(c.legs.final)}°</b><small>Finale</small></div>
+    </div>
+    <div class="cir-wind">
+      ${windLine}
+    </div>
+  </div>`;
+}
+
+function pad3(deg){return String(Math.round(((deg%360)+360)%360)).padStart(3,'0')}
+function wd360(d){return String(Math.round(((d%360)+360)%360)).padStart(3,'0')}
+
+function updR(){
+  const el=document.getElementById('rl'),sc=document.getElementById('scs'),fw=document.getElementById('fw');
+  if(!route.length){el.innerHTML='<div class="em">📍 Add waypoints</div>';sc.style.display='none';fw.style.display='none';document.getElementById('as-warn').innerHTML='';return}
+  sc.style.display='flex';fw.style.display='block';
+  el.innerHTML=route.map((w,i)=>{
+    const db=DB.find(d=>(d.c===w.c&&d.c!=='—')||d.n===w.n);
+    const rwInfo=db&&db.rw?`<span style="color:var(--cyan);font-size:8px;font-weight:700;margin-left:2px" title="Runway">${db.rw.replace(/\s*\d+m$/,'')}</span>`:'';
+    return `<div class="ri">
+    <div class="ix">${i+1}</div><span class="ic">${w.c!=='—'?w.c:''}</span><span class="nm">${w.n}${rwInfo}</span>
+    ${w.f?`<span class="frq">${w.f}</span>`:''}
+    <span class="ab" style="color:var(--orange);border-color:var(--orange)" onclick="event.stopPropagation();window.open('https://www.deskaeronautico.it/mappa/index.php?lat=${w.la}&lon=${w.lo}&z=9','_blank')">⚠N</span>
+    <div class="rm" onclick="rmWP(${i})">×</div>
+  </div>`}).join('');
+  document.getElementById('h-w').textContent=route.length;
+
+  // Check conflicts
+  const conflicts=checkAirspaceConflicts();
+  const warn=document.getElementById('as-warn');
+  if(conflicts.length>0){
+    const names=[...new Set(conflicts.map(c=>c.asp.name))];
+    const maxAlt=+(document.getElementById('a-maxalt').value||8000);
+    const alt=+(document.getElementById('a-alt').value||2500);
+    let altHint='';
+
+    // Analyze each conflict for best option
+    const hints=[];
+    conflicts.forEach(c=>{
+      const asp=c.asp;
+      const overAlt=nextVFRAlt(asp.ceil+500,c.leg);
+      const underAlt=asp.floor>=1000?prevVFRAlt(asp.floor-500,c.leg):0;
+
+      if(overAlt<=maxAlt){
+        hints.push({type:'over',alt:overAlt,name:asp.name,floor:asp.floor,ceil:asp.ceil});
+      } else if(underAlt>=500 && asp.floor>=1000){
+        hints.push({type:'under',alt:underAlt,name:asp.name,floor:asp.floor,ceil:asp.ceil});
+      } else {
+        hints.push({type:'around',name:asp.name,floor:asp.floor,ceil:asp.ceil});
+      }
+    });
+
+    const overs=hints.filter(h=>h.type==='over');
+    const unders=hints.filter(h=>h.type==='under');
+    const arounds=hints.filter(h=>h.type==='around');
+
+    if(overs.length>0){
+      const goAlt=Math.max(...overs.map(h=>h.alt));
+      altHint+=`<br>✈ <b>Climb to ${goAlt}ft</b> to fly over <button class="btn btn-g" style="font-size:7px;padding:1px 4px;margin-left:3px" onclick="document.getElementById('a-alt').value=${goAlt};calc()">Apply</button>`;
+    }
+    if(unders.length>0){
+      const goAlt=Math.min(...unders.map(h=>h.alt));
+      altHint+=`<br>↓ <b>Descend to ${goAlt}ft</b> to fly under (floor ${unders[0].floor}ft) <button class="btn btn-p" style="font-size:7px;padding:1px 4px;margin-left:3px" onclick="document.getElementById('a-alt').value=${goAlt};calc()">Apply</button>`;
+    }
+    if(arounds.length>0){
+      altHint+=`<br>🧭 <b>${arounds.map(h=>h.name).join(', ')}</b> — must route around (max alt ${maxAlt}ft, ceiling ${arounds[0].ceil}ft)`;
+    }
+
+    warn.innerHTML=`<div class="airspace-warn">⚠ Crosses: ${names.join(', ')}${altHint}</div>`;
+  } else warn.innerHTML='';
+}
+function autoWxS(){const ic=route.filter(w=>w.c!=='—'&&w.c.length===4).map(w=>w.c);if(ic.length)document.getElementById('wx-s').value=ic.join(',')}
+
+// ═══ SEARCH ═══
+function srch(q){
+  const el=document.getElementById('srl');if(!q||q.length<2){el.classList.remove('vis');return}
+  const lq=q.toLowerCase();
+  const res=DB.filter(a=>a.c.toLowerCase().includes(lq)||a.n.toLowerCase().includes(lq)||a.ci.toLowerCase().includes(lq)).slice(0,12);
+  if(!res.length){el.classList.remove('vis');return}
+  el.innerHTML=res.map(a=>`<div class="sri" onclick='addWP(${JSON.stringify(a).replace(/'/g,"&#39;")})'>
+    <span class="si">${a.c}</span><span class="sn">${a.n}—${a.ci}</span></div>`).join('');
+  el.classList.add('vis');
+}
+document.addEventListener('click',e=>{if(!e.target.closest('.srch'))document.getElementById('srl').classList.remove('vis')});
+
+// ═══ WEATHER ═══
+async function fetchWx(){
+  const ids=document.getElementById('wx-s').value.trim().toUpperCase().replace(/\s+/g,',');
+  if(!ids)return;
+  try{
+    const r=await fetch(`https://aviationweather.gov/api/data/metar?ids=${ids}&format=raw&taf=false&hours=2`);
+    const t=await r.text();
+    if(t.trim()){document.getElementById('wx-m').textContent=t.trim();const m=t.match(/\b(\d{3})(\d{2,3})(G\d+)?(KT|MPS)\b/);if(m){let d=+m[1],s=+m[2];if(m[4]==='MPS')s=Math.round(s*1.944);lastWx={d,s}}}
+  }catch(e){document.getElementById('wx-m').textContent='Error'}
+}
+function applyWx(){if(!lastWx)return;document.getElementById('w-d').value=lastWx.d;document.getElementById('w-s').value=lastWx.s;calc()}
+
+// ═══ AUTO WEATHER FETCH — Open-Meteo (free, no API key) ═══
+// Pressure levels: 950hPa≈1500ft, 925hPa≈2500ft, 900hPa≈3000ft, 850hPa≈5000ft, 800hPa≈6000ft, 700hPa≈10000ft
+function altToPressureLevel(altFt){
+  if(altFt<=1000) return '1000';
+  if(altFt<=2000) return '950';
+  if(altFt<=3000) return '925';
+  if(altFt<=4000) return '900';
+  if(altFt<=5500) return '850';
+  if(altFt<=7000) return '800';
+  return '700';
+}
+
+async function autoFetchWx(){
+  if(route.length<1){alert('Add waypoints first');return}
+  
+  const dateEl=document.getElementById('fl-date');
+  const timeEl=document.getElementById('fl-time');
+  if(!dateEl.value){dateEl.value=new Date().toISOString().slice(0,10)}
+  
+  const flDate=dateEl.value;
+  const flTime=timeEl.value||'10:00';
+  const depDateTime=`${flDate}T${flTime}`;
+  const alt=+(document.getElementById('a-alt').value||2500);
+  const pLevel=altToPressureLevel(alt);
+  const ff=+document.getElementById('a-f').value||16;
+  
+  const wxPanel=document.getElementById('wx-auto');
+  wxPanel.style.display='block';
+  wxPanel.innerHTML='<div style="color:var(--blue);font-weight:700">🌤 Fetching weather for route at '+alt+'ft ('+pLevel+'hPa)...</div>';
+  
+  // Fetch weather for midpoints of each leg + departure + arrival
+  const points=[];
+  if(route.length>=1) points.push({name:route[0].c!=='—'?route[0].c:route[0].n,la:route[0].la,lo:route[0].lo});
+  for(let i=0;i<route.length-1;i++){
+    const mid={name:'Mid '+(i+1),la:(route[i].la+route[i+1].la)/2,lo:(route[i].lo+route[i+1].lo)/2};
+    points.push(mid);
+  }
+  if(route.length>=2) points.push({name:route[route.length-1].c!=='—'?route[route.length-1].c:route[route.length-1].n,la:route[route.length-1].la,lo:route[route.length-1].lo});
+  
+  try{
+    // Fetch Open-Meteo for each point
+    const results=[];
+    for(const pt of points){
+      const url=`https://api.open-meteo.com/v1/forecast?latitude=${pt.la.toFixed(2)}&longitude=${pt.lo.toFixed(2)}&hourly=wind_speed_${pLevel}hPa,wind_direction_${pLevel}hPa,temperature_${pLevel}hPa,cloud_cover,visibility,precipitation&start_date=${flDate}&end_date=${flDate}&timezone=Europe/Rome`;
+      const resp=await fetch(url);
+      const data=await resp.json();
+      
+      if(data.hourly){
+        // Find the hour closest to planned departure
+        const targetHour=parseInt(flTime.split(':')[0]);
+        const times=data.hourly.time;
+        let bestIdx=0;
+        for(let i=0;i<times.length;i++){
+          const h=parseInt(times[i].split('T')[1].split(':')[0]);
+          if(Math.abs(h-targetHour)<Math.abs(parseInt(times[bestIdx].split('T')[1].split(':')[0])-targetHour)) bestIdx=i;
+        }
+        
+        const ws=data.hourly[`wind_speed_${pLevel}hPa`]?.[bestIdx];
+        const wd=data.hourly[`wind_direction_${pLevel}hPa`]?.[bestIdx];
+        const temp=data.hourly[`temperature_${pLevel}hPa`]?.[bestIdx];
+        const cloud=data.hourly.cloud_cover?.[bestIdx];
+        const vis=data.hourly.visibility?.[bestIdx];
+        const precip=data.hourly.precipitation?.[bestIdx];
+        
+        results.push({name:pt.name,ws:ws?Math.round(ws/1.852):0,wd:wd?Math.round(wd):0,temp,cloud,vis,precip,wsKmh:ws?Math.round(ws):0});
+      }
+    }
+    
+    if(results.length===0){wxPanel.innerHTML='<span style="color:var(--red)">No weather data returned</span>';return}
+    
+    // Calculate average wind for route
+    const avgWd=Math.round(results.reduce((s,r)=>s+r.wd,0)/results.length);
+    const avgWs=Math.round(results.reduce((s,r)=>s+r.ws,0)/results.length);
+    const avgTemp=results[0].temp!==undefined?Math.round(results.reduce((s,r)=>s+(r.temp||0),0)/results.length):null;
+    const maxCloud=Math.max(...results.map(r=>r.cloud||0));
+    const minVis=Math.min(...results.filter(r=>r.vis).map(r=>r.vis));
+    const maxPrecip=Math.max(...results.map(r=>r.precip||0));
+    
+    // Apply average wind
+    document.getElementById('w-d').value=avgWd;
+    document.getElementById('w-s').value=avgWs;
+    lastWx={d:avgWd,s:avgWs};
+    
+    // VFR assessment
+    let vfrStatus='✓ VFR OK';let vfrColor='var(--green)';
+    if(minVis<5000||maxCloud>87||maxPrecip>2){vfrStatus='⚠ MARGINAL VFR';vfrColor='var(--orange)';}
+    if(minVis<1500||maxCloud>95||maxPrecip>10){vfrStatus='⛔ IFR/NO-GO';vfrColor='var(--red)';}
+    
+    // Build weather display
+    let html=`<div style="font-weight:900;font-size:10px;color:${vfrColor};margin-bottom:4px">${vfrStatus} — ${flDate} ${flTime}LT — ${pLevel}hPa (~${alt}ft)</div>`;
+    html+=`<div style="border-bottom:1px solid var(--bd);padding-bottom:3px;margin-bottom:3px">`;
+    html+=`<b>Route avg wind:</b> ${avgWd}°/${avgWs}kt (${Math.round(avgWs*1.852)}km/h)`;
+    if(avgTemp!==null) html+=` | <b>Temp:</b> ${avgTemp}°C`;
+    html+=`<br><b>Cloud max:</b> ${maxCloud}% | <b>Vis min:</b> ${minVis>=10000?'>10km':(minVis/1000).toFixed(1)+'km'} | <b>Precip:</b> ${maxPrecip.toFixed(1)}mm`;
+    html+=`</div>`;
+    
+    // Per-point details
+    html+=`<div style="font-size:8px;color:var(--ink3)">`;
+    results.forEach(r=>{
+      html+=`<b>${r.name}</b>: ${r.wd}°/${r.ws}kt`;
+      if(r.temp!==undefined) html+=` ${r.temp}°C`;
+      html+=` cld:${r.cloud||0}%`;
+      html+=` | `;
+    });
+    html+=`</div>`;
+    
+    // Windy link for visual check
+    const dep=route[0];
+    html+=`<div style="margin-top:3px"><a href="https://www.windy.com/?${dep.la.toFixed(2)},${dep.lo.toFixed(2)},8,wind,${pLevel}h,${flDate}-${flTime.replace(':','')}Z" target="_blank" style="color:var(--blue);font-weight:700;font-size:8px">🌊 Visualizza su Windy.com →</a></div>`;
+    
+    wxPanel.innerHTML=html;
+    
+    calc(); // Recalculate with new wind
+    
+    // Also auto-fetch METAR
+    autoWxS();
+    fetchWx();
+    
+  }catch(e){
+    wxPanel.innerHTML=`<span style="color:var(--red)">Error: ${e.message}</span>`;
+  }
+}
+
+// Set default flight date to today on init
+// ═══ AIRFIELD DB MANAGEMENT ═══
+const DB_KEY='vfr_custom_airfields';
+let dbPickMode=false;
+
+function dbLoadCustom(){
+  try{
+    const saved=localStorage.getItem(DB_KEY);
+    if(saved){
+      const custom=JSON.parse(saved);
+      custom.forEach(a=>{
+        // Don't duplicate: check by name+lat
+        if(!DB.find(d=>d.n===a.n&&Math.abs(d.la-a.la)<0.001))
+          DB.push(a);
+      });
+    }
+  }catch(e){console.warn('DB load error',e)}
+  dbUpdateUI();
+}
+
+function dbSaveCustom(){
+  // Save only entries that were added by user (marked with _custom flag)
+  const custom=DB.filter(d=>d._custom);
+  localStorage.setItem(DB_KEY,JSON.stringify(custom));
+}
+
+function dbAdd(){
+  const icao=document.getElementById('db-icao').value.trim()||'—';
+  const name=document.getElementById('db-name').value.trim();
+  const city=document.getElementById('db-city').value.trim();
+  const lat=parseFloat(document.getElementById('db-lat').value);
+  const lon=parseFloat(document.getElementById('db-lon').value);
+  const elev=parseInt(document.getElementById('db-elev').value)||0;
+  const rw=document.getElementById('db-rw').value.trim();
+  const freq=document.getElementById('db-freq').value.trim();
+  const type=document.getElementById('db-type').value;
+  const cir=document.getElementById('db-cir').value;
+  
+  if(!name){alert('Name required');return}
+  if(isNaN(lat)||isNaN(lon)){alert('Valid lat/lon required');return}
+  
+  const entry={c:icao,n:name,ci:city,la:lat,lo:lon,el:elev,t:type,rw:rw,f:freq,cir:cir,_custom:true};
+  
+  // Check for duplicate
+  const existing=DB.findIndex(d=>d.n===name&&Math.abs(d.la-lat)<0.001);
+  if(existing>=0){
+    if(confirm(`"${name}" already exists. Replace?`)){
+      DB[existing]=entry;
+    } else return;
+  } else {
+    DB.push(entry);
+  }
+  
+  dbSaveCustom();
+  dbUpdateUI();
+  dbClearForm();
+  if(map) drawAF();
+  alert(`✓ ${name} added to database`);
+}
+
+function dbRemove(idx){
+  const entry=DB[idx];
+  if(!entry) return;
+  if(!confirm(`Remove "${entry.n}" from database?`)) return;
+  DB.splice(idx,1);
+  dbSaveCustom();
+  dbUpdateUI();
+  if(map) drawAF();
+}
+
+function dbClearForm(){
+  document.getElementById('db-icao').value='—';
+  document.getElementById('db-name').value='';
+  document.getElementById('db-city').value='';
+  document.getElementById('db-lat').value='';
+  document.getElementById('db-lon').value='';
+  document.getElementById('db-elev').value='0';
+  document.getElementById('db-rw').value='';
+  document.getElementById('db-freq').value='';
+}
+
+function dbFromMap(){
+  dbPickMode=true;
+  alert('Click on the map to pick coordinates for the new airfield');
+  if(window.innerWidth<=900) document.getElementById('sidebar').classList.remove('open');
+}
+
+function dbMapClick(lat,lon){
+  if(!dbPickMode) return false;
+  dbPickMode=false;
+  document.getElementById('db-lat').value=lat.toFixed(4);
+  document.getElementById('db-lon').value=lon.toFixed(4);
+  if(window.innerWidth<=900) document.getElementById('sidebar').classList.add('open');
+  return true;
+}
+
+function dbUpdateUI(){
+  const count=DB.length;
+  const el=document.getElementById('db-count');if(el)el.textContent=count;
+  const el2=document.getElementById('db-count2');if(el2)el2.textContent=count;
+  const el3=document.getElementById('dbn');if(el3)el3.textContent=count;
+  
+  const list=document.getElementById('db-list');
+  if(!list) return;
+  
+  list.innerHTML=DB.map((d,i)=>{
+    const isCustom=d._custom;
+    const icao=d.c!=='—'?`<span style="color:var(--green);font-weight:700">${d.c}</span> `:'';
+    const rwInfo=d.rw?` <span style="color:var(--cyan)">${d.rw.replace(/\s*\d+m$/,'')}</span>`:'';
+    const typeIcon=d.t==='A'?'🟢':'🟠';
+    const delBtn=isCustom?`<span style="cursor:pointer;color:var(--red);font-size:10px;margin-left:3px" onclick="dbRemove(${i})" title="Remove">×</span>`:'';
+    const editBtn=isCustom?`<span style="cursor:pointer;color:var(--blue);font-size:8px;margin-left:2px" onclick="dbEdit(${i})" title="Edit">✎</span>`:'';
+    const customBadge=isCustom?'<span style="background:var(--blue);color:#fff;font-size:6px;padding:0 3px;border-radius:2px;margin-left:2px">USER</span>':'';
+    return `<div style="display:flex;align-items:center;gap:2px;padding:2px 0;border-bottom:1px solid var(--bg3)">
+      <span>${typeIcon}</span>${icao}<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.n}${rwInfo}</span>${customBadge}${editBtn}${delBtn}
+    </div>`;
+  }).join('');
+}
+
+function dbEdit(idx){
+  const d=DB[idx];if(!d) return;
+  document.getElementById('db-icao').value=d.c;
+  document.getElementById('db-name').value=d.n;
+  document.getElementById('db-city').value=d.ci;
+  document.getElementById('db-lat').value=d.la;
+  document.getElementById('db-lon').value=d.lo;
+  document.getElementById('db-elev').value=d.el;
+  document.getElementById('db-rw').value=d.rw;
+  document.getElementById('db-freq').value=d.f;
+  document.getElementById('db-type').value=d.t;
+  document.getElementById('db-cir').value=d.cir||'L';
+}
+
+function dbExport(){
+  const data=JSON.stringify(DB.filter(d=>d._custom),null,2);
+  const blob=new Blob([data],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='vfr_airfields_custom.json';a.click();
+  URL.revokeObjectURL(url);
+}
+
+function dbImport(){document.getElementById('db-file').click()}
+
+function dbLoadFile(e){
+  const file=e.target.files[0];if(!file) return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const imported=JSON.parse(ev.target.result);
+      if(!Array.isArray(imported)){alert('Invalid file: expected JSON array');return}
+      let added=0;
+      imported.forEach(a=>{
+        a._custom=true;
+        if(!DB.find(d=>d.n===a.n&&Math.abs(d.la-a.la)<0.001)){
+          DB.push(a);added++;
+        }
+      });
+      dbSaveCustom();dbUpdateUI();
+      if(map) drawAF();
+      alert(`✓ Imported ${added} airfields (${imported.length-added} duplicates skipped)`);
+    }catch(err){alert('Error parsing JSON: '+err.message)}
+  };
+  reader.readAsText(file);
+  e.target.value='';
+}
+
+function dbReset(){
+  if(!confirm('Remove all custom airfields and reset to default database?')) return;
+  // Remove all custom entries
+  for(let i=DB.length-1;i>=0;i--) if(DB[i]._custom) DB.splice(i,1);
+  localStorage.removeItem(DB_KEY);
+  dbUpdateUI();
+  if(map) drawAF();
+  alert('✓ Database reset to defaults');
+}
+
+function initFlightDate(){
+  document.getElementById('fl-date').value=new Date().toISOString().slice(0,10);
+}
+
+// ═══════════════════════════════════════════════════════
+// GPS LIVE TRACKING
+// ═══════════════════════════════════════════════════════
+let gpsWatchId=null, gpsMarker=null, gpsAccCircle=null, gpsTrail=[], gpsStartTime=null, gpsFuelStart=0;
+let gpsLastPos=null, gpsLastTime=null, gpsCurrentLeg=0;
+
+function toggleGPS(){
+  const panel=document.getElementById('gps-panel');
+  const btn=document.getElementById('gps-btn');
+  
+  if(gpsWatchId!==null){
+    // Stop tracking
+    navigator.geolocation.clearWatch(gpsWatchId);
+    gpsWatchId=null;
+    panel.classList.remove('on');
+    btn.textContent='📍 Start GPS Tracking';
+    btn.classList.remove('active');
+    if(gpsMarker){map.removeLayer(gpsMarker);gpsMarker=null;}
+    if(gpsAccCircle){map.removeLayer(gpsAccCircle);gpsAccCircle=null;}
+    return;
+  }
+  
+  if(!navigator.geolocation){alert('GPS not available on this device');return;}
+  if(route.length<2){alert('Add a route first, then start GPS tracking');return;}
+  
+  // Start tracking
+  gpsStartTime=Date.now();
+  gpsFuelStart=+(document.getElementById('a-c').value)||72;
+  gpsCurrentLeg=0;
+  gpsTrail=[];
+  
+  panel.classList.add('on');
+  btn.textContent='⏹ Stop Tracking';
+  btn.classList.add('active');
+  document.getElementById('gps-pos').textContent='Acquiring GPS...';
+  
+  gpsWatchId=navigator.geolocation.watchPosition(onGPSUpdate,onGPSError,{
+    enableHighAccuracy:true,
+    maximumAge:3000,
+    timeout:10000
+  });
+}
+
+function onGPSUpdate(pos){
+  const lat=pos.coords.latitude;
+  const lon=pos.coords.longitude;
+  const alt=pos.coords.altitude;
+  const spd=pos.coords.speed; // m/s
+  const hdg=pos.coords.heading;
+  const acc=pos.coords.accuracy; // meters
+  const now=Date.now();
+  
+  const ff=+(document.getElementById('a-f').value)||16;
+  const fc=gpsFuelStart;
+  
+  // GS from GPS (m/s → kt)
+  const gsKt=spd!==null?Math.round(spd*1.944):0;
+  const gsKmh=spd!==null?Math.round(spd*3.6):0;
+  const altFt=alt!==null?Math.round(alt*3.281):0;
+  const trkDeg=hdg!==null?Math.round(hdg):0;
+  
+  // Time elapsed since start
+  const elapsedMin=(now-gpsStartTime)/60000;
+  const elapsedHr=elapsedMin/60;
+  
+  // Fuel burned (based on elapsed time and fuel flow)
+  const fuelBurned=elapsedHr*ff;
+  const fuelRemaining=Math.max(fc-fuelBurned,0);
+  const enduranceMin=fuelRemaining>0?(fuelRemaining/ff)*60:0;
+  const fuelPct=(fuelRemaining/fc)*100;
+  
+  // Find current leg + next waypoint
+  let nextWPIdx=gpsCurrentLeg+1;
+  if(nextWPIdx>=route.length) nextWPIdx=route.length-1;
+  
+  // Check if we passed the next waypoint (within 0.5 NM)
+  if(nextWPIdx<route.length){
+    const distToNext=dst(lat,lon,route[nextWPIdx].la,route[nextWPIdx].lo);
+    if(distToNext<0.5 && gpsCurrentLeg<route.length-2){
+      gpsCurrentLeg++;
+      nextWPIdx=gpsCurrentLeg+1;
+    }
+  }
+  
+  const nextWP=route[nextWPIdx];
+  const destWP=route[route.length-1];
+  const distNext=dst(lat,lon,nextWP.la,nextWP.lo);
+  const distDest=dst(lat,lon,destWP.la,destWP.lo);
+  
+  // ETE calculations
+  const eteNext=gsKt>5?distNext/gsKt*60:9999;
+  const eteDest=gsKt>5?distDest/gsKt*60:9999;
+  
+  // Update GPS panel
+  document.getElementById('gps-gs').textContent=`${gsKt}`;
+  document.getElementById('gps-trk').textContent=`${trkDeg}°`;
+  document.getElementById('gps-alt').textContent=altFt>0?altFt:'—';
+  document.getElementById('gps-next-dist').textContent=distNext.toFixed(1);
+  document.getElementById('gps-next-name').textContent=nextWP.c!=='—'?nextWP.c:nextWP.n;
+  document.getElementById('gps-ete-next').textContent=eteNext<9999?fmt(eteNext):'—';
+  document.getElementById('gps-ete-dest').textContent=eteDest<9999?fmt(eteDest):'—';
+  document.getElementById('gps-endur').textContent=fmt(enduranceMin);
+  
+  // FUEL display — big and prominent
+  const fuelEl=document.getElementById('gps-fuel');
+  document.getElementById('gps-fuel-val').textContent=`${fuelRemaining.toFixed(1)} L`;
+  fuelEl.className='gps-fuel'+(fuelRemaining<10?' crit':enduranceMin<45?' low':'');
+  
+  document.getElementById('gps-fuel-used').textContent=`${fuelBurned.toFixed(1)} L burned (${elapsedMin.toFixed(0)} min)`;
+  document.getElementById('gps-fuel-endur').textContent=`${enduranceMin.toFixed(0)} min endurance`;
+  
+  const barF=document.getElementById('gps-bar-f');
+  barF.style.width=fuelPct+'%';
+  barF.style.background=fuelPct<15?'var(--red)':fuelPct<30?'var(--orange)':'var(--green)';
+  
+  // Accuracy indicator
+  let accLabel,accColor;
+  if(acc!==null&&acc!==undefined){
+    if(acc<=30){accLabel='●GPS';accColor='#00c853'}
+    else if(acc<=100){accLabel='●GPS';accColor='#ff9800'}
+    else if(acc<=1000){accLabel='◐WiFi';accColor='#ff5722'}
+    else{accLabel='○IP';accColor='#f44336'}
+  } else {accLabel='?';accColor='#999'}
+  const accTxt=acc?`${acc<1000?Math.round(acc)+'m':(acc/1000).toFixed(1)+'km'}`:'—';
+  
+  document.getElementById('gps-pos').innerHTML=`<span style="color:${accColor};font-weight:900">${accLabel}</span> ±${accTxt} | ${lat.toFixed(4)}N ${lon.toFixed(4)}E | GS ${gsKt}kt/${gsKmh}kmh | ${new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})}LT`;
+  
+  // Update map marker + accuracy circle
+  if(map&&typeof L!=='undefined'){
+    if(gpsMarker) map.removeLayer(gpsMarker);
+    if(gpsAccCircle) map.removeLayer(gpsAccCircle);
+    gpsMarker=L.circleMarker([lat,lon],{
+      radius:10,color:'#fff',fillColor:'#0055d4',fillOpacity:1,weight:4
+    }).addTo(map);
+    if(acc&&acc>10){
+      gpsAccCircle=L.circle([lat,lon],{radius:acc,color:'#0055d4',fillColor:'#0055d4',fillOpacity:.08,weight:1,dashArray:'4 4'}).addTo(map);
+    }
+  }
+  
+  // Draw heading indicator
+  if(hdg!==null&&map&&typeof L!=='undefined'){
+    const hRad=hdg*Math.PI/180;
+    const aheadLat=lat+0.008*Math.cos(hRad);
+    const aheadLon=lon+0.008*Math.sin(hRad)/Math.cos(lat*Math.PI/180);
+    const headLine=L.polyline([[lat,lon],[aheadLat,aheadLon]],{color:'#0055d4',weight:3,opacity:.8}).addTo(map);
+    gpsTrail.push(headLine);
+    if(gpsTrail.length>50){map.removeLayer(gpsTrail.shift());}
+  }
+  
+  // Store for next calc
+  gpsLastPos={lat,lon};
+  gpsLastTime=now;
+}
+
+function onGPSError(err){
+  document.getElementById('gps-pos').textContent=`GPS Error: ${err.message}`;
+}
+
+function gpsCenterMap(){
+  if(gpsLastPos&&map) map.setView([gpsLastPos.lat,gpsLastPos.lon],11);
+}
+
+function gpsMarkPosition(){
+  if(!gpsLastPos) return;
+  const name=`MRK${Date.now().toString().slice(-4)}`;
+  addWP({c:'—',n:name,ci:'GPS Mark',la:gpsLastPos.lat,lo:gpsLastPos.lon,el:0,t:'W',rw:'',f:''});
+}
+
+// ═══ GPS PANEL DRAG ═══
+function initGPSDrag(){
+  const panel=document.getElementById('gps-panel');
+  const handle=document.getElementById('gps-handle');
+  let isDragging=false,startX,startY,startLeft,startTop;
+
+  function onStart(e){
+    isDragging=true;
+    const ev=e.touches?e.touches[0]:e;
+    const rect=panel.getBoundingClientRect();
+    startX=ev.clientX;startY=ev.clientY;
+    startLeft=rect.left;startTop=rect.top;
+    panel.style.transition='none';
+    e.preventDefault();
+  }
+  function onMove(e){
+    if(!isDragging)return;
+    const ev=e.touches?e.touches[0]:e;
+    const dx=ev.clientX-startX,dy=ev.clientY-startY;
+    panel.style.left=(startLeft+dx)+'px';
+    panel.style.top=(startTop+dy)+'px';
+    panel.style.right='auto';
+    e.preventDefault();
+  }
+  function onEnd(){isDragging=false;panel.style.transition=''}
+
+  handle.addEventListener('mousedown',onStart);
+  document.addEventListener('mousemove',onMove);
+  document.addEventListener('mouseup',onEnd);
+  handle.addEventListener('touchstart',onStart,{passive:false});
+  document.addEventListener('touchmove',onMove,{passive:false});
+  document.addEventListener('touchend',onEnd);
+}
+
+function gpsToggleMini(){
+  document.getElementById('gps-panel').classList.toggle('mini');
+}
+
+// ═══ NAV CALC ═══
+const R2D=180/Math.PI,D2R=Math.PI/180,RNM=3440.065,norm=d=>((d%360)+360)%360;
+function brg(a,b,c,d){const e=(d-b)*D2R;return norm(Math.atan2(Math.sin(e)*Math.cos(c*D2R),Math.cos(a*D2R)*Math.sin(c*D2R)-Math.sin(a*D2R)*Math.cos(c*D2R)*Math.cos(e))*R2D)}
+function dst(a,b,c,d){const e=(c-a)*D2R,f=(d-b)*D2R;return RNM*2*Math.atan2(Math.sqrt(Math.sin(e/2)**2+Math.cos(a*D2R)*Math.cos(c*D2R)*Math.sin(f/2)**2),Math.sqrt(1-(Math.sin(e/2)**2+Math.cos(a*D2R)*Math.cos(c*D2R)*Math.sin(f/2)**2)))}
+function wcc(tc,tas,wd,ws){if(!ws)return{wca:0,th:tc,gs:tas};const a=(wd-tc)*D2R,s=(ws/tas)*Math.sin(a);if(Math.abs(s)>=1)return null;const w=Math.asin(s)*R2D;return{wca:w,th:norm(tc+w),gs:Math.max(Math.round(tas*Math.cos(w*D2R)-ws*Math.cos(a)),1)}}
+function fmt(m){if(!isFinite(m)||m<0)return'—';const h=Math.floor(m/60),n=Math.round(m%60);return`${h}:${n.toString().padStart(2,'0')}`}
+
+// Unit conversions
+const nm2km=1.852, kt2kmh=1.852, l2gal=0.264172;
+function syncUnit(srcId,dstId,factor){
+  const v=+document.getElementById(srcId).value;
+  document.getElementById(dstId).value=+(v*factor).toFixed(factor<1?0:1);
+}
+function syncAllUnits(){
+  document.getElementById('a-tk').value=Math.round((+document.getElementById('a-t').value)*kt2kmh);
+  document.getElementById('a-fg').value=(+(document.getElementById('a-f').value)*l2gal).toFixed(1);
+  document.getElementById('a-cg').value=(+(document.getElementById('a-c').value)*l2gal).toFixed(1);
+}
+
+function calc(){
+  drawAirspaces();
+  const tas=+document.getElementById('a-t').value||85;
+  const ff=+document.getElementById('a-f').value||16;
+  const fc=+document.getElementById('a-c').value||72;
+  const mv=+document.getElementById('a-v').value||3.2;
+  const wd=+document.getElementById('w-d').value||0;
+  const ws=+document.getElementById('w-s').value||0;
+  const fTaxi=+document.getElementById('f-taxi').value||3;
+  const fClimb=+document.getElementById('f-climb').value||2;
+  const fAltDist=+document.getElementById('f-altdist').value||0;
+  const fContPct=+document.getElementById('f-cont').value||5;
+  const fResMin=+document.getElementById('f-restype').value||30;
+  const resFuel=(fResMin/60)*ff;
+  const tb=document.getElementById('ntb');
+  document.getElementById('fb-taxi').textContent=fTaxi.toFixed(1)+' L';
+  document.getElementById('fb-climb').textContent=fClimb.toFixed(1)+' L';
+  document.getElementById('fb-contpct').textContent=fContPct;
+  document.getElementById('fb-resmin').textContent=fResMin;
+  document.getElementById('fb-onboard').textContent=fc+' L ('+(fc*l2gal).toFixed(1)+' gal)';
+  if(route.length<2){
+    tb.innerHTML='<tr><td colspan="10" class="em">Add 2+ waypoints</td></tr>';
+    ['h-d','h-f','h-e'].forEach(x=>document.getElementById(x).textContent='\u2014');
+    document.getElementById('h-rwy').innerHTML='\u2014';
+    ['s-d','s-e','s-f'].forEach(x=>document.getElementById(x).textContent='\u2014');
+    ['fb-trip','fb-cont','fb-alt','fb-res','fb-total','fb-margin'].forEach(x=>document.getElementById(x).textContent='\u2014');
+    document.getElementById('fb-status').textContent='';document.getElementById('fb-status').style.background='';
+    drawR();return;
+  }
+  const conflicts=checkAirspaceConflicts();
+  let tD=0,tT=0,tripFuel=0;const rows=[];
+  for(let i=0;i<route.length-1;i++){
+    const a=route[i],b=route[i+1],tc=brg(a.la,a.lo,b.la,b.lo),d=dst(a.la,a.lo,b.la,b.lo),nav=wcc(tc,tas,wd,ws);
+    if(!nav){rows.push({err:1,a,b});continue;}
+    const mh=norm(nav.th-mv),ete=(d/nav.gs)*60,lf=(ete/60)*ff;
+    tD+=d;tT+=ete;tripFuel+=lf;
+    const runFuel=fTaxi+fClimb+tripFuel,runRem=fc-runFuel;
+    const legConf=conflicts.filter(c=>c.leg===i).map(c=>c.asp.name);
+    rows.push({a,b,tc:Math.round(tc),d:d.toFixed(1),dkm:(d*nm2km).toFixed(1),wca:nav.wca.toFixed(1),mh:Math.round(mh),gs:nav.gs,gsk:Math.round(nav.gs*kt2kmh),ete:fmt(ete),fuel:lf.toFixed(1),fgal:(lf*l2gal).toFixed(1),rem:runRem.toFixed(1),rgal:(runRem*l2gal).toFixed(1),rc:runRem<0?'vr':runRem<resFuel?'va':'vg',asp:legConf.length?legConf.join(','):'\u2713 Clear',aspW:legConf.length>0,err:0});
+  }
+  const contFuel=tripFuel*(fContPct/100);
+  const altFuel=fAltDist>0?(fAltDist/tas)*ff:0;
+  const totalReq=fTaxi+fClimb+tripFuel+contFuel+altFuel+resFuel;
+  const margin=fc-totalReq;
+  document.getElementById('fb-trip').textContent=tripFuel.toFixed(1)+' L ('+(tripFuel*l2gal).toFixed(1)+' gal)';
+  document.getElementById('fb-cont').textContent=contFuel.toFixed(1)+' L';
+  document.getElementById('fb-alt').textContent=altFuel.toFixed(1)+' L';
+  document.getElementById('fb-res').textContent=resFuel.toFixed(1)+' L ('+(resFuel*l2gal).toFixed(1)+' gal)';
+  document.getElementById('fb-total').textContent=totalReq.toFixed(1)+' L ('+(totalReq*l2gal).toFixed(1)+' gal)';
+  document.getElementById('fb-total').style.color=margin<0?'var(--red)':'var(--green)';
+  document.getElementById('fb-margin').textContent=(margin>=0?'+':'')+margin.toFixed(1)+' L ('+(margin*l2gal).toFixed(1)+' gal)';
+  document.getElementById('fb-margin').style.color=margin<0?'var(--red)':margin<5?'var(--orange)':'var(--green)';
+  const st=document.getElementById('fb-status');
+  if(margin<0){st.textContent='\u26d4 INSUFFICIENT \u2014 Need '+Math.abs(margin).toFixed(1)+'L more';st.style.background='var(--redl)';st.style.color='var(--red)';}
+  else if(margin<5){st.textContent='\u26a0 MARGINAL \u2014 '+margin.toFixed(1)+'L margin';st.style.background='var(--orangel)';st.style.color='var(--orange)';}
+  else{st.textContent='\u2713 FUEL OK \u2014 '+margin.toFixed(1)+'L margin ('+(margin/ff*60).toFixed(0)+' min)';st.style.background='var(--greenl)';st.style.color='var(--green)';}
+  let h=rows.map(r=>{if(r.err)return'<tr><td colspan="10" class="vr">Error</td></tr>';
+    return'<tr><td>'+(r.a.c!=='\u2014'?r.a.c:r.a.n)+'\u2192'+(r.b.c!=='\u2014'?r.b.c:r.b.n)+'</td><td>'+r.tc+'\u00b0</td><td>'+r.wca+'</td><td>'+r.mh+'\u00b0</td><td>'+r.d+'<br><small style="color:var(--ink3)">'+r.dkm+'km</small></td><td>'+r.gs+'<br><small style="color:var(--ink3)">'+r.gsk+'km/h</small></td><td>'+r.ete+'</td><td>'+r.fuel+'<br><small style="color:var(--ink3)">'+r.fgal+'gal</small></td><td class="'+r.rc+'">'+r.rem+'<br><small>'+r.rgal+'gal</small></td><td class="'+(r.aspW?'vr':'vg')+'">'+r.asp+'</td></tr>';}).join('');
+  const avgGS=rows.length?Math.round(rows.filter(r=>!r.err).reduce((s,r)=>s+r.gs,0)/rows.filter(r=>!r.err).length):0;
+  h+='<tr class="tot"><td>TRIP</td><td></td><td></td><td></td><td>'+tD.toFixed(1)+' NM<br><small>'+(tD*nm2km).toFixed(1)+' km</small></td><td>avg '+avgGS+'kt</td><td>'+fmt(tT)+'</td><td>'+tripFuel.toFixed(1)+' L</td><td></td><td></td></tr>';
+  h+='<tr class="tot"><td colspan="7" style="font-size:8px">+Taxi '+fTaxi+'L +Climb '+fClimb+'L +Cont '+contFuel.toFixed(1)+'L +Alt '+altFuel.toFixed(1)+'L +Res '+resFuel.toFixed(1)+'L</td><td style="color:'+(margin<0?'var(--red)':'var(--green)')+'"><b>REQ '+totalReq.toFixed(1)+'L</b></td><td style="color:'+(margin<0?'var(--red)':'var(--green)')+'"><b>'+(margin>=0?'+':'')+margin.toFixed(1)+'L</b></td><td></td></tr>';
+  tb.innerHTML=h;
+  document.getElementById('h-d').textContent=tD.toFixed(0)+'NM / '+(tD*nm2km).toFixed(0)+'km';
+  document.getElementById('h-f').textContent=totalReq.toFixed(0)+'L / '+(totalReq*l2gal).toFixed(1)+'gal';
+  document.getElementById('h-e').textContent=fmt(tT);
+  document.getElementById('h-tas').textContent=tas+'kt/'+Math.round(tas*kt2kmh)+'kmh';
+  document.getElementById('h-fw').className='hs'+(margin<0?' e':margin<5?' w':'');
+  document.getElementById('s-d').textContent=tD.toFixed(0)+' / '+(tD*nm2km).toFixed(0);
+  document.getElementById('s-e').textContent=fmt(tT);
+  document.getElementById('s-f').textContent=totalReq.toFixed(0)+' / '+(totalReq*l2gal).toFixed(1);
+  const pct=Math.min((totalReq/fc)*100,100),fl=document.getElementById('ff');
+  fl.style.width=pct+'%';fl.style.background=margin<0?'var(--red)':margin<5?'var(--orange)':'var(--green)';
+  document.getElementById('fu').textContent=totalReq.toFixed(1)+'L required';
+  document.getElementById('fv').textContent=(margin>=0?'+':'')+margin.toFixed(1)+'L margin';
+  updateCircuitInfo();
+  drawR();
+}
+
+// ═══ DRAW ROUTE ═══
+function drawR(){
+  if(!map||typeof L==='undefined')return;
+  if(poly)map.removeLayer(poly);rM.forEach(m=>map.removeLayer(m));rL.forEach(l=>map.removeLayer(l));rM=[];rL=[];
+  if(!route.length)return;
+  const conflicts=checkAirspaceConflicts();
+  const conflictLegs=new Set(conflicts.map(c=>c.leg));
+
+  // Draw each leg separately — red if conflicting
+  for(let i=0;i<route.length-1;i++){
+    const col=conflictLegs.has(i)?'#c41e1e':'#0055d4';
+    const leg=L.polyline([[route[i].la,route[i].lo],[route[i+1].la,route[i+1].lo]],{color:col,weight:4,opacity:.95,dashArray:conflictLegs.has(i)?'6,6':'12,6'}).addTo(map);
+    rM.push(leg);
+  }
+
+  // Waypoint markers
+  route.forEach((w,i)=>{
+    const col=i===0?'#007a3d':i===route.length-1?'#c41e1e':'#0055d4';
+    const m=L.circleMarker([w.la,w.lo],{radius:8,color:'#fff',fillColor:col,fillOpacity:1,weight:3}).addTo(map);
+    rM.push(m);
+    rL.push(L.marker([w.la,w.lo],{icon:L.divIcon({className:'wp-lbl',html:`${i+1}.${w.c!=='—'?w.c:w.n}`,iconAnchor:[-8,4]})}).addTo(map));
+  });
+  if(route.length>1){
+    const bounds=L.latLngBounds(route.map(w=>[w.la,w.lo]));
+    map.fitBounds(bounds.pad(.12));
+  }
+}
+
+// ═══ BRIEFING ═══
+function genBrief(){
+  stab('br',document.querySelectorAll('.bt')[1]);const el=document.getElementById('bb');
+  if(route.length<2){el.innerHTML='<div class="em">Add route first</div>';return}
+  const dep=route[0],arr=route[route.length-1],alt=document.getElementById('a-alt').value;
+  let tD=0;for(let i=0;i<route.length-1;i++)tD+=dst(route[i].la,route[i].lo,route[i+1].la,route[i+1].lo);
+  const conflicts=checkAirspaceConflicts();
+  let h=`<h4>VFR Pre-Flight Briefing</h4><div class="bi ok">${new Date().toISOString().slice(0,16).replace('T',' ')}Z</div>
+  <h4>Route</h4><div class="bi">${route.map(w=>w.c!=='—'?w.c:w.n).join(' → ')}</div>
+  <div class="bi">DEP: <b>${dep.c!=='—'?dep.c:dep.n}</b> | ARR: <b>${arr.c!=='—'?arr.c:arr.n}</b> | ${tD.toFixed(1)} NM (${(tD*1.852).toFixed(1)} km) | Alt: ${alt}ft</div>`;
+  if(conflicts.length){
+    h+=`<h4 style="color:var(--red)">⚠ Airspace Conflicts</h4>`;
+    [...new Set(conflicts.map(c=>c.asp.name))].forEach(n=>{
+      const a=conflicts.find(c=>c.asp.name===n).asp;
+      h+=`<div class="bi w">${a.name} (${a.type} ${a.floor}→${a.ceil}ft) — RESOLVE BEFORE FLIGHT</div>`;
+    });
+  } else h+=`<div class="bi ok">✓ Route clear of restricted airspace at ${alt}ft</div>`;
+  h+=`<h4>Checklist — <a href="https://www.deskaeronautico.it" target="_blank">deskaeronautico.it</a></h4>`;
+  h+=`<div class="bi w">☐ <a href="https://www.deskaeronautico.it/mappa/index.php?lat=${dep.la}&lon=${dep.lo}&z=7" target="_blank"><b>Mappa NOTAM</b></a></div>`;
+  h+=`<div class="bi w">☐ <a href="https://www.deskaeronautico.it/carte-meteo/" target="_blank"><b>Carte Meteo + WINTEM</b></a></div>`;
+  h+=`<div class="bi w">☐ <a href="https://www.deskaeronautico.it/sigmet-e-airmet/" target="_blank"><b>SIGMET/AIRMET</b></a></div>`;
+  h+=`<div class="bi w">☐ <a href="https://www.deskaeronautico.it/calcolo-effemeridi/" target="_blank"><b>Effemeridi</b></a></div>`;
+  h+=`<h4>Reporting Points</h4>`;
+  route.forEach((w,i)=>{if(i>0&&i<route.length-1)h+=`<div class="bi">${i}. <b>${w.n}</b> (${w.la.toFixed(3)}N ${w.lo.toFixed(3)}E)</div>`});
+  h+=`<h4>FIS</h4><div class="bi">Milano 124.925 | Roma 126.900 | Padova 125.350 | 121.500</div>`;
+  h+=`<h4>📚 Sources & Info</h4>`;
+  h+=`<div class="bi"><a href="https://www.qnhfly.com/ricerca-campi-volo" target="_blank"><b>QNHFly — Campi Volo Italia</b></a> (images, contacts, details)</div>`;
+  h+=`<div class="bi"><a href="https://www.webaai.it" target="_blank"><b>WebAAI / Avioportolano</b></a> (approach charts, AD plates)</div>`;
+  h+=`<div class="bi"><a href="https://www.enav.it" target="_blank"><b>ENAV AIP</b></a> | <a href="https://www.deskaeronautico.it" target="_blank"><b>Desk Aeronautico</b></a></div>`;
+  const depDB2=DB.find(d=>(d.c===dep.c&&d.c!=='—')||d.n===dep.n);
+  const arrDB2=DB.find(d=>(d.c===arr.c&&d.c!=='—')||d.n===arr.n);
+  if(depDB2) h+=`<div class="bi">DEP: <a href="https://www.qnhfly.com/ricerca-campi-volo?q=${encodeURIComponent(depDB2.n)}" target="_blank">QNHFly ${depDB2.n}</a> | <a href="https://www.webaai.it/search.php?search=${encodeURIComponent(depDB2.n)}" target="_blank">WebAAI</a></div>`;
+  if(arrDB2&&arrDB2!==depDB2) h+=`<div class="bi">ARR: <a href="https://www.qnhfly.com/ricerca-campi-volo?q=${encodeURIComponent(arrDB2.n)}" target="_blank">QNHFly ${arrDB2.n}</a> | <a href="https://www.webaai.it/search.php?search=${encodeURIComponent(arrDB2.n)}" target="_blank">WebAAI</a></div>`;
+  // Circuit info in briefing
+  const wd=+(document.getElementById('w-d').value)||0;
+  const ws=+(document.getElementById('w-s').value)||0;
+  if(ws>=1){
+    const depDB=DB.find(d=>(d.c===dep.c&&d.c!=='—')||d.n===dep.n);
+    const arrDB=DB.find(d=>(d.c===arr.c&&d.c!=='—')||d.n===arr.n);
+    h+=`<h4>🛬 Active Runway & Circuit</h4>`;
+    h+=`<div class="bi">Wind ${ws>=1?wd360(wd)+'°/'+ws+'kt':'CALM'}</div>`;
+    if(depDB){
+      const rw=parseRunway(depDB.rw);
+      if(rw){
+        const c=calcCircuit(depDB.rw,wd,ws,depDB.cir);
+        if(c) h+=`<div class="bi ok"><b>DEP ${depDB.c!=='—'?depDB.c:depDB.n}</b> → ${c.label} (${c.dir} pattern) | Sottovento: <b>${pad3(c.legs.downwind)}°</b>${ws>=1?' | X-wind: '+c.crosswind+'kt '+c.crossSide+' | HW: '+c.headwind+'kt':''}</div>`;
+      } else {
+        h+=`<div class="bi w"><b>DEP ${depDB.c!=='—'?depDB.c:depDB.n}</b> — Pista: ${depDB.rw||'N/A'} — heading non specificato, verificare AIP</div>`;
+      }
+    }
+    if(arrDB&&arrDB!==depDB){
+      const rw=parseRunway(arrDB.rw);
+      if(rw){
+        const c=calcCircuit(arrDB.rw,wd,ws,arrDB.cir);
+        if(c) h+=`<div class="bi ok"><b>ARR ${arrDB.c!=='—'?arrDB.c:arrDB.n}</b> → ${c.label} (${c.dir} pattern) | Sottovento: <b>${pad3(c.legs.downwind)}°</b>${ws>=1?' | X-wind: '+c.crosswind+'kt '+c.crossSide+' | HW: '+c.headwind+'kt':''}</div>`;
+      } else {
+        h+=`<div class="bi w"><b>ARR ${arrDB.c!=='—'?arrDB.c:arrDB.n}</b> — Pista: ${arrDB.rw||'N/A'} — heading non specificato, verificare AIP</div>`;
+      }
+    }
+  }
+  el.innerHTML=h;
+}
+
+// ═══ EXPORT ═══
+function exportLog(){
+  let t='═══ VFR NAV LOG v5 ═══\n'+new Date().toISOString()+'\nRoute: '+route.map(w=>w.c!=='—'?w.c:w.n).join('→')+'\n';
+  t+=`Alt: ${document.getElementById('a-alt').value}ft\n\n`;
+  document.querySelectorAll('#ntb tr').forEach(r=>{t+=Array.from(r.querySelectorAll('td')).map(x=>x.textContent.padEnd(14)).join('')+'\n'});
+  navigator.clipboard.writeText(t).then(()=>alert('Copied!'));
+}
+
+// ═══ MAP TILE HELPER ═══
+function latlon2tile(lat,lon,z){
+  const n=Math.pow(2,z);
+  const x=Math.floor((lon+180)/360*n);
+  const y=Math.floor((1-Math.log(Math.tan(lat*Math.PI/180)+1/Math.cos(lat*Math.PI/180))/Math.PI)/2*n);
+  return{x,y};
+}
+
+async function fetchMapImage(lat,lon,zoom,sizePx){
+  try{
+    const tile=latlon2tile(lat,lon,zoom);
+    const grid=2; // 5x5 tiles
+    const tileSize=256;
+    const canvas=document.createElement('canvas');
+    canvas.width=canvas.height=(grid*2+1)*tileSize;
+    const ctx=canvas.getContext('2d');
+    const promises=[];
+    for(let dx=-grid;dx<=grid;dx++){
+      for(let dy=-grid;dy<=grid;dy++){
+        const tx=tile.x+dx, ty=tile.y+dy;
+        const url=`https://basemaps.cartocdn.com/rastertiles/voyager/${zoom}/${tx}/${ty}@2x.png`;
+        promises.push(new Promise(res=>{
+          const img=new Image();img.crossOrigin='anonymous';
+          img.onload=()=>{ctx.drawImage(img,(dx+grid)*tileSize,(dy+grid)*tileSize,tileSize,tileSize);res(true)};
+          img.onerror=()=>res(false);
+          img.src=url;
+        }));
+      }
+    }
+    await Promise.all(promises);
+    // Crop to center square
+    const cropCanvas=document.createElement('canvas');
+    cropCanvas.width=cropCanvas.height=sizePx;
+    const cCtx=cropCanvas.getContext('2d');
+    const srcSize=canvas.width;
+    const offset=(srcSize-sizePx)/2;
+    cCtx.drawImage(canvas,offset,offset,sizePx,sizePx,0,0,sizePx,sizePx);
+    return cropCanvas.toDataURL('image/jpeg',0.7);
+  }catch(e){console.warn('Map tile fetch failed',e);return null}
+}
+
+// ═══ PDF EXPORT ═══
+async function exportPDF(){
+  if(route.length<2){alert('Add a route with 2+ waypoints first');return}
+  
+  // Show loading
+  const loadDiv=document.createElement('div');
+  loadDiv.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;background:var(--blue);color:#fff;padding:16px 32px;border-radius:8px;font-family:var(--fm);font-size:13px;font-weight:700;box-shadow:0 8px 32px rgba(0,0,0,.3)';
+  loadDiv.textContent='Generating PDF with maps...';
+  document.body.appendChild(loadDiv);
+  
+  try{
+  
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  const W=297,H=210;
+  const tas=+document.getElementById('a-t').value||85;
+  const ff=+document.getElementById('a-f').value||16;
+  const fc=+document.getElementById('a-c').value||72;
+  const mv=+document.getElementById('a-v').value||3.2;
+  const wd=+document.getElementById('w-d').value||0;
+  const ws=+document.getElementById('w-s').value||0;
+  const alt=document.getElementById('a-alt').value;
+  const maxAlt=document.getElementById('a-maxalt').value;
+  const flDate=document.getElementById('fl-date').value||'—';
+  const flTime=document.getElementById('fl-time').value||'—';
+  const dep=route[0],arr=route[route.length-1];
+  const depN=dep.c!=='—'?dep.c:dep.n,arrN=arr.c!=='—'?arr.c:arr.n;
+  
+  // Compute legs
+  let tD=0,tT=0,tripFuel=0;const legs=[];
+  for(let i=0;i<route.length-1;i++){
+    const a=route[i],b=route[i+1],tc=brg(a.la,a.lo,b.la,b.lo),d=dst(a.la,a.lo,b.la,b.lo),nav=wcc(tc,tas,wd,ws);
+    if(!nav) continue;
+    const mh=norm(nav.th-mv),ete=(d/nav.gs)*60,lf=(ete/60)*ff;
+    tD+=d;tT+=ete;tripFuel+=lf;
+    const runFuel=+document.getElementById('f-taxi').value+ +document.getElementById('f-climb').value+tripFuel;
+    legs.push({from:a.c!=='—'?a.c:a.n,to:b.c!=='—'?b.c:b.n,tc:Math.round(tc),wca:nav.wca.toFixed(1),mh:Math.round(mh),d:d.toFixed(1),dkm:(d*nm2km).toFixed(1),gs:Math.round(nav.gs),gsk:Math.round(nav.gs*kt2kmh),ete:fmt(ete),fuel:lf.toFixed(1),rem:(fc-runFuel).toFixed(1)});
+  }
+  const fTaxi=+document.getElementById('f-taxi').value||3;
+  const fClimb=+document.getElementById('f-climb').value||2;
+  const fContPct=+document.getElementById('f-cont').value||5;
+  const fResMin=+document.getElementById('f-restype').value||30;
+  const contFuel=tripFuel*(fContPct/100);
+  const fAltDist=+document.getElementById('f-altdist').value||0;
+  const altFuel=fAltDist>0?(fAltDist/tas)*ff:0;
+  const resFuel=(fResMin/60)*ff;
+  const totalReq=fTaxi+fClimb+tripFuel+contFuel+altFuel+resFuel;
+  const margin=fc-totalReq;
+  
+  // ════════════ PAGE 1: NAV LOG + FUEL ════════════
+  doc.setFillColor(0,85,212);doc.rect(0,0,W,18,'F');
+  doc.setTextColor(255);doc.setFontSize(14);doc.setFont('helvetica','bold');
+  doc.text('VFR FLIGHT PLAN',10,8);
+  doc.setFontSize(8);doc.setFont('helvetica','normal');
+  doc.text(`${depN} > ${arrN}  |  ${flDate} ${flTime}LT  |  Alt ${alt}ft  |  TAS ${tas}kt  |  Wind ${wd}/${ws}kt`,10,14.5);
+  doc.text(new Date().toLocaleString('it-IT'),W-10,8,{align:'right'});
+  doc.text('VFR Planner v5 — Italy',W-10,14.5,{align:'right'});
+  
+  // Summary line
+  doc.setTextColor(0);doc.setFillColor(242,240,236);doc.rect(10,20,W-20,8,'F');
+  doc.setFontSize(7.5);doc.setFont('helvetica','bold');
+  doc.text(`Route: ${route.map(w=>w.c!=='—'?w.c:w.n).join(' > ')}  |  ${tD.toFixed(1)}NM (${(tD*nm2km).toFixed(1)}km)  |  ETE ${fmt(tT)}  |  FF ${ff}L/h  |  Fuel ${fc}L (${(fc*l2gal).toFixed(1)}gal)  |  Var ${mv}E  |  Max ${maxAlt}ft`,14,25.5);
+  
+  // Nav Log table
+  doc.autoTable({
+    startY:30,
+    head:[['Leg','TC','WCA','MH','NM','km','GS kt','km/h','ETE','Fuel L','Rem L']],
+    body:legs.map(l=>[l.from+' > '+l.to,l.tc+'°',l.wca,l.mh+'°',l.d,l.dkm,l.gs,l.gsk,l.ete,l.fuel,l.rem]),
+    foot:[['TOTAL','','','',tD.toFixed(1),(tD*nm2km).toFixed(1),'','',fmt(tT),tripFuel.toFixed(1),'']],
+    styles:{fontSize:7.5,cellPadding:1.5,font:'helvetica'},
+    headStyles:{fillColor:[0,85,212],textColor:255,fontStyle:'bold',fontSize:7},
+    footStyles:{fillColor:[0,85,212],textColor:255,fontStyle:'bold'},
+    columnStyles:{0:{cellWidth:52},1:{halign:'center',cellWidth:16},2:{halign:'center',cellWidth:16},3:{halign:'center',cellWidth:16},4:{halign:'right',cellWidth:18},5:{halign:'right',cellWidth:18},6:{halign:'right',cellWidth:18},7:{halign:'right',cellWidth:18},8:{halign:'center',cellWidth:18},9:{halign:'right',cellWidth:18},10:{halign:'right',cellWidth:18}},
+    margin:{left:10,right:10}
+  });
+  
+  let y=doc.lastAutoTable.finalY+4;
+  
+  // ─── FUEL BOX (left) ───
+  const fBoxH=50;
+  doc.setFillColor(234,248,240);doc.setDrawColor(0,122,61);doc.setLineWidth(0.4);
+  doc.roundedRect(10,y,135,fBoxH,2,2,'FD');
+  doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(0,122,61);
+  doc.text('FUEL PLANNING (VFR)',14,y+5.5);
+  doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(0);
+  let fy=y+11;
+  [['Taxi + Startup',fTaxi.toFixed(1)],['Climb',fClimb.toFixed(1)],['Trip (GS)',tripFuel.toFixed(1)],
+   ['Contingency '+fContPct+'%',contFuel.toFixed(1)],['Alternate '+fAltDist+'NM',altFuel.toFixed(1)],
+   ['Final Res. '+fResMin+'min',resFuel.toFixed(1)]].forEach(fl=>{
+    doc.text(fl[0],14,fy);doc.text(fl[1]+' L',130,fy,{align:'right'});fy+=4.5;
+  });
+  doc.setLineWidth(0.2);doc.line(14,fy,140,fy);fy+=4;
+  doc.setFont('helvetica','bold');
+  doc.text('TOTAL REQUIRED',14,fy);doc.text(totalReq.toFixed(1)+' L  ('+(totalReq*l2gal).toFixed(1)+' gal)',130,fy,{align:'right'});fy+=4.5;
+  doc.text('Onboard',14,fy);doc.text(fc+' L  ('+(fc*l2gal).toFixed(1)+' gal)',130,fy,{align:'right'});fy+=4.5;
+  if(margin>=0)doc.setTextColor(0,122,61);else doc.setTextColor(196,30,30);
+  doc.setFontSize(8);
+  doc.text(margin>=0?'MARGIN: +'+margin.toFixed(1)+' L  ('+Math.round(margin/ff*60)+' min)':'INSUFFICIENT: '+margin.toFixed(1)+' L',14,fy);
+  
+  // ─── CHECKLIST (right) ───
+  doc.setTextColor(0);
+  const cx=150;
+  doc.setFillColor(245,243,239);doc.setDrawColor(180);doc.setLineWidth(0.3);
+  doc.roundedRect(cx,y,W-10-cx,fBoxH,2,2,'FD');
+  doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(80);
+  doc.text('PRE-FLIGHT CHECKLIST',cx+4,y+5.5);
+  doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(50);
+  let cy3=y+11;
+  ['NOTAM — deskaeronautico.it/mappa','METAR / TAF','SIGMET / AIRMET','Carte Meteo / WINTEM','Effemeridi','Peso & Bilanciamento','Fuel check — dipstick/sight gauge'].forEach(item=>{
+    doc.rect(cx+4,cy3-2.5,3,3);doc.text(item,cx+10,cy3);cy3+=4.5;
+  });
+  cy3+=2;
+  doc.setFontSize(6.5);doc.setFont('helvetica','bold');doc.setTextColor(100);
+  doc.text('FIS: Milano 124.925 | Roma 126.900 | Padova 125.350 | EMRG 121.500',cx+4,cy3);
+  
+  // Footer P1
+  doc.setFontSize(5.5);doc.setTextColor(160);
+  doc.text('VFR Planner v5 — For planning only. Verify with official AIP / Desk Aeronautico. Pilot responsible for flight safety.',10,H-4);
+  doc.text('Page 1/2',W-10,H-4,{align:'right'});
+  
+  // ════════════ PAGE 2: CIRCUIT DIAGRAMS ════════════
+  doc.addPage('a4','landscape');
+  doc.setFillColor(0,107,122);doc.rect(0,0,W,14,'F');
+  doc.setTextColor(255);doc.setFontSize(12);doc.setFont('helvetica','bold');
+  doc.text('CIRCUIT PATTERNS — Active Runway & Approach',10,9);
+  doc.setFontSize(8);doc.setFont('helvetica','normal');
+  doc.text(`Wind: ${ws<1?'CALM':wd360(wd)+' / '+ws+'kt'}  |  ${flDate} ${flTime}LT`,W-10,9,{align:'right'});
+  
+  const depDB=DB.find(d=>(d.c===dep.c&&d.c!=='—')||d.n===dep.n);
+  const arrDB=DB.find(d=>(d.c===arr.c&&d.c!=='—')||d.n===arr.n);
+  
+  let diagrams=[];
+  if(depDB){
+    const rw=parseRunway(depDB.rw);
+    const c=rw?calcCircuit(depDB.rw,wd,ws,depDB.cir):null;
+    diagrams.push({label:'DEP',db:depDB,c,hasCircuit:!!c});
+  }
+  if(arrDB&&arrDB!==depDB){
+    const rw=parseRunway(arrDB.rw);
+    const c=rw?calcCircuit(arrDB.rw,wd,ws,arrDB.cir):null;
+    diagrams.push({label:'ARR',db:arrDB,c,hasCircuit:!!c});
+  }
+  
+  if(diagrams.length===0){
+    doc.setTextColor(100);doc.setFontSize(12);
+    doc.text('No runway data available for DEP/ARR',W/2,H/2,{align:'center'});
+  }
+  
+  // Helper: draw one circuit diagram
+  function drawCircuitDiagram(doc,diag,oX,oY,bW,bH,mapImg){
+    const c=diag.c, db=diag.db;
+    
+    // Background: map image or light fill
+    if(mapImg){
+      try{doc.addImage(mapImg,'JPEG',oX,oY,bW,bH)}catch(e){}
+      // Semi-transparent overlay for readability
+      doc.setFillColor(255,255,255);
+      try{doc.setGState(new doc.GState({opacity:0.4}));doc.rect(oX,oY,bW,bH,'F');doc.setGState(new doc.GState({opacity:1}))}
+      catch(e){doc.setFillColor(255,255,255);doc.rect(oX,oY,bW,bH,'F')}
+    } else {
+      doc.setFillColor(245,248,250);
+      doc.rect(oX,oY,bW,bH,'F');
+    }
+    doc.setDrawColor(0,107,122);doc.setLineWidth(0.4);
+    doc.roundedRect(oX,oY,bW,bH,2,2,'S');
+    
+    // Title
+    doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(0,107,122);
+    const aptName=db.c!=='—'?db.c:db.n;
+    const freq=db.f?' — '+db.f:'';
+    doc.text(`${diag.label}: ${aptName}${freq}`,oX+bW/2,oY+7,{align:'center'});
+    
+    if(!c){
+      // No circuit data — show field info only
+      doc.setFontSize(11);doc.setTextColor(0,85,212);
+      doc.text(`Pista: ${db.rw||'N/A'}`,oX+bW/2,oY+14,{align:'center'});
+      doc.setFontSize(9);doc.setTextColor(130,40,160);
+      doc.text('Heading pista non specificato',oX+bW/2,oY+bH/2-8,{align:'center'});
+      doc.setFontSize(8);doc.setTextColor(80);
+      doc.text('Verificare su AIP / Avioportolano / QNHFly',oX+bW/2,oY+bH/2,{align:'center'});
+      doc.text('Oppure aggiungere designazione (es. 17/35) nel DB Editor',oX+bW/2,oY+bH/2+7,{align:'center'});
+      doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(80);
+      doc.text(`${db.n} | ${db.ci} | ${db.el}ft | ${db.la.toFixed(4)}N ${db.lo.toFixed(4)}E | ${db.t==='V'?'Aviosuperficie':'Aeroporto'}`,oX+bW/2,oY+bH-8,{align:'center'});
+      return;
+    }
+    
+    doc.setFontSize(13);doc.setTextColor(0,85,212);
+    doc.text(`RWY ${String(c.activeNum).padStart(2,'0')}  ${c.dir==='R'?'RIGHT circuit':'LEFT circuit'}`,oX+bW/2,oY+14,{align:'center'});
+    
+    // ── GEOMETRY ──
+    // Circuit is drawn in a coordinate system where:
+    // - Runway is centered at (midX, midY)
+    // - Active runway heading points "up" in the rotated frame
+    const midX=oX+bW/2, midY=oY+18+(bH-44)/2;
+    const rwLen=50; // mm runway length
+    const offDist=32; // mm perpendicular offset for downwind
+    const ext=14; // mm extension beyond runway
+    
+    // Unit vectors along runway heading
+    const hRad=c.activeHdg*Math.PI/180;
+    const ux=Math.sin(hRad), uy=-Math.cos(hRad); // along runway (toward landing threshold is -u)
+    // Perpendicular: left of heading for L pattern, right for R
+    const px=c.dir==='L'?-uy:uy, py=c.dir==='L'?ux:-ux;
+    
+    // Key points
+    const thr={x:midX-ux*rwLen/2, y:midY-uy*rwLen/2}; // threshold (landing end)
+    const depEnd={x:midX+ux*rwLen/2, y:midY+uy*rwLen/2}; // departure end
+    const p1={x:depEnd.x+ux*ext, y:depEnd.y+uy*ext}; // end upwind climb
+    const p2={x:p1.x+px*offDist, y:p1.y+py*offDist}; // crosswind→downwind corner
+    const p3={x:thr.x-ux*ext+px*offDist, y:thr.y-uy*ext+py*offDist}; // downwind→base corner
+    const p4={x:thr.x-ux*ext, y:thr.y-uy*ext}; // base→final corner
+    const fin={x:thr.x-ux*2, y:thr.y-uy*2}; // final approach point
+    
+    // ── DRAW RUNWAY ──
+    doc.setDrawColor(100,100,100);doc.setLineWidth(3);
+    doc.line(thr.x,thr.y,depEnd.x,depEnd.y);
+    // Center line dashes
+    doc.setDrawColor(255);doc.setLineWidth(0.4);
+    for(let t=0.15;t<0.85;t+=0.12){
+      const ax=thr.x+ux*rwLen*t, ay=thr.y+uy*rwLen*t;
+      const bx=thr.x+ux*rwLen*(t+0.06), by=thr.y+uy*rwLen*(t+0.06);
+      doc.line(ax,ay,bx,by);
+    }
+    // Runway numbers at ends
+    doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(0,85,212);
+    doc.text(String(c.activeNum).padStart(2,'0'),thr.x-ux*6,thr.y-uy*6,{align:'center'});
+    doc.setTextColor(120);
+    doc.text(String(c.recipNum).padStart(2,'0'),depEnd.x+ux*6,depEnd.y+uy*6,{align:'center'});
+    // Threshold marker
+    doc.setFillColor(0,85,212);doc.circle(thr.x,thr.y,2,'F');
+    
+    // ── DRAW CIRCUIT LEGS ──
+    const legDefs=[
+      {a:thr,b:depEnd,id:'upwind',lbl:'UPWIND',hdg:c.legs.upwind,col:[0,85,212],w:1},
+      {a:depEnd,b:p1,id:'climb',lbl:'',hdg:0,col:[0,85,212],w:0.6},
+      {a:p1,b:p2,id:'crosswind',lbl:'CROSSWIND',hdg:c.legs.crosswind_leg,col:[0,140,70],w:1},
+      {a:p2,b:p3,id:'downwind',lbl:'SOTTOVENTO',hdg:c.legs.downwind,col:[210,100,0],w:1.2},
+      {a:p3,b:p4,id:'base',lbl:'BASE',hdg:c.legs.base,col:[130,40,160],w:1},
+      {a:p4,b:fin,id:'final',lbl:'FINALE',hdg:c.legs.final,col:[200,30,30],w:1},
+    ];
+    
+    legDefs.forEach(leg=>{
+      doc.setDrawColor(leg.col[0],leg.col[1],leg.col[2]);doc.setLineWidth(leg.w);
+      doc.line(leg.a.x,leg.a.y,leg.b.x,leg.b.y);
+      
+      // Arrow at 60% of segment
+      const t=0.6;
+      const ax=leg.a.x+(leg.b.x-leg.a.x)*t, ay=leg.a.y+(leg.b.y-leg.a.y)*t;
+      const ang=Math.atan2(leg.b.y-leg.a.y,leg.b.x-leg.a.x);
+      const aL=3;
+      doc.line(ax,ay,ax-Math.cos(ang-0.45)*aL,ay-Math.sin(ang-0.45)*aL);
+      doc.line(ax,ay,ax-Math.cos(ang+0.45)*aL,ay-Math.sin(ang+0.45)*aL);
+    });
+    
+    // ── TURN ARCS (rounded corners) ──
+    doc.setDrawColor(180);doc.setLineWidth(0.3);
+    // Small turn indicators at corners (just dots)
+    [p1,p2,p3,p4].forEach(pt=>{doc.setFillColor(200);doc.circle(pt.x,pt.y,0.8,'F')});
+    
+    // ── LABELS — PLACED OUTSIDE THE CIRCUIT ──
+    // Each label is placed on the OUTSIDE of its leg, away from the circuit center
+    const labelOffset=10; // mm from the leg line
+    
+    // Upwind: on opposite side from downwind (inside near runway)
+    const upMid={x:(thr.x+depEnd.x)/2, y:(thr.y+depEnd.y)/2};
+    const upLbl={x:upMid.x-px*8, y:upMid.y-py*8};
+    drawLegLabel(doc,'UPWIND',c.legs.upwind,[0,85,212],upLbl.x,upLbl.y);
+    
+    // Crosswind: outside corner, beyond p1-p2 midpoint
+    const xwMid={x:(p1.x+p2.x)/2, y:(p1.y+p2.y)/2};
+    const xwLbl={x:xwMid.x+ux*9, y:xwMid.y+uy*9};
+    drawLegLabel(doc,'CROSSWIND',c.legs.crosswind_leg,[0,140,70],xwLbl.x,xwLbl.y);
+    
+    // Sottovento: outside, away from runway
+    const dwMid={x:(p2.x+p3.x)/2, y:(p2.y+p3.y)/2};
+    const dwLbl={x:dwMid.x+px*10, y:dwMid.y+py*10};
+    drawLegLabel(doc,'SOTTOVENTO',c.legs.downwind,[210,100,0],dwLbl.x,dwLbl.y);
+    
+    // Base: outside, beyond p3-p4 midpoint
+    const bsMid={x:(p3.x+p4.x)/2, y:(p3.y+p4.y)/2};
+    const bsLbl={x:bsMid.x-ux*9, y:bsMid.y-uy*9};
+    drawLegLabel(doc,'BASE',c.legs.base,[130,40,160],bsLbl.x,bsLbl.y);
+    
+    // Finale: outside, opposite side from downwind
+    const fnMid={x:(p4.x+fin.x)/2, y:(p4.y+fin.y)/2};
+    const fnLbl={x:fnMid.x-px*10, y:fnMid.y-py*10};
+    drawLegLabel(doc,'FINALE',c.legs.final,[200,30,30],fnLbl.x,fnLbl.y);
+    
+    // ── COMPASS ROSE (top-left) ──
+    const crX=oX+14, crY=oY+28, crR=8;
+    doc.setDrawColor(160);doc.setLineWidth(0.3);
+    doc.circle(crX,crY,crR);
+    // N arrow
+    doc.setDrawColor(200,0,0);doc.setLineWidth(0.8);
+    doc.line(crX,crY,crX,crY-crR+1);
+    doc.line(crX,crY-crR+1,crX-1.5,crY-crR+4);
+    doc.line(crX,crY-crR+1,crX+1.5,crY-crR+4);
+    // S line
+    doc.setDrawColor(160);doc.setLineWidth(0.3);
+    doc.line(crX,crY,crX,crY+crR-1);
+    doc.line(crX,crY,crX+crR-1,crY);
+    doc.line(crX,crY,crX-crR+1,crY);
+    // Labels
+    doc.setFontSize(6);doc.setFont('helvetica','bold');
+    doc.setTextColor(200,0,0);doc.text('N',crX,crY-crR-1.5,{align:'center'});
+    doc.setTextColor(160);
+    doc.text('S',crX,crY+crR+3.5,{align:'center'});
+    doc.text('E',crX+crR+2.5,crY+1.5,{align:'center'});
+    doc.text('W',crX-crR-2.5,crY+1.5,{align:'center'});
+    
+    // ── WIND INDICATOR ──
+    const wiX=oX+bW-16, wiY=oY+bH-20;
+    if(ws>=1){
+      const wdR=wd*Math.PI/180;
+      doc.setDrawColor(200,0,0);doc.setLineWidth(1);
+      const wa1={x:wiX+Math.sin(wdR)*9,y:wiY-Math.cos(wdR)*9};
+      const wa2={x:wiX-Math.sin(wdR)*9,y:wiY+Math.cos(wdR)*9};
+      doc.line(wa1.x,wa1.y,wa2.x,wa2.y);
+      // Arrowhead (wind blows TO wa2)
+      const aL=3.5,aA=0.4;
+      doc.line(wa2.x,wa2.y,wa2.x-Math.sin(wdR-aA)*aL,wa2.y+Math.cos(wdR-aA)*aL);
+      doc.line(wa2.x,wa2.y,wa2.x-Math.sin(wdR+aA)*aL,wa2.y+Math.cos(wdR+aA)*aL);
+      // Label
+      doc.setFontSize(7);doc.setTextColor(200,0,0);doc.setFont('helvetica','bold');
+      doc.text('WIND',wiX,wiY-13,{align:'center'});
+      doc.text(wd360(wd)+'\u00b0/'+ws+'kt',wiX,wiY+14,{align:'center'});
+    } else {
+      doc.setDrawColor(170);doc.setLineWidth(0.5);
+      doc.circle(wiX,wiY,7);
+      doc.line(wiX-3,wiY,wiX+3,wiY);doc.line(wiX,wiY-3,wiX,wiY+3);
+      doc.setFontSize(6);doc.setTextColor(150);doc.setFont('helvetica','bold');
+      doc.text('CALM',wiX,wiY+12,{align:'center'});
+    }
+    
+    // ── INFO BOX ──
+    const iY=oY+bH-10;
+    doc.setFontSize(6.5);doc.setFont('helvetica','normal');doc.setTextColor(80);
+    const hwT=ws<1?'CALM — default RWY':c.headwind>=0?'HW '+Math.abs(c.headwind)+'kt':'TW '+Math.abs(c.headwind)+'kt';
+    const xwT=ws>=1?' | Xwind '+c.crosswind+'kt '+c.crossSide+(c.crosswind>12?' STRONG':c.crosswind>7?' MOD':''):'';
+    const rwRaw=db.rw.replace(/\s*\d+m$/,'');
+    doc.text(`${hwT}${xwT}  |  Pista ${rwRaw}  |  ${db.el}ft  |  ${db.la.toFixed(3)}N ${db.lo.toFixed(3)}E`,oX+bW/2,iY,{align:'center'});
+  }
+  
+  function drawLegLabel(doc,name,hdg,col,x,y){
+    // White background pill
+    const tw=name.length*1.8+4;
+    doc.setFillColor(255,255,255);doc.setDrawColor(col[0],col[1],col[2]);doc.setLineWidth(0.3);
+    doc.roundedRect(x-tw/2,y-5.5,tw,11,1.5,1.5,'FD');
+    // Text
+    doc.setFontSize(6);doc.setFont('helvetica','bold');doc.setTextColor(col[0],col[1],col[2]);
+    doc.text(name,x,y-1.5,{align:'center'});
+    doc.setFontSize(8);
+    doc.text(pad3(hdg)+'\u00b0',x,y+3.5,{align:'center'});
+  }
+  
+  // Fetch map backgrounds for each diagram
+  const mapImages=[];
+  for(const diag of diagrams){
+    const img=await fetchMapImage(diag.db.la,diag.db.lo,14,800);
+    mapImages.push(img);
+  }
+  
+  diagrams.forEach((diag,idx)=>{
+    const oX=idx===0?10:W/2+3;
+    const oY=18;
+    const bW=diagrams.length===1?W-20:W/2-13;
+    const bH=H-24;
+    drawCircuitDiagram(doc,diag,oX,oY,bW,bH,mapImages[idx]);
+  });
+  
+  // Footer P2
+  doc.setFontSize(5.5);doc.setTextColor(160);
+  doc.text('VFR Planner v5 — Circuits for reference only. Always follow AIP procedures and local traffic patterns.',10,H-4);
+  doc.text('Page 2/2',W-10,H-4,{align:'right'});
+  
+  const fname=`VFR_${depN}_${arrN}_${flDate.replace(/-/g,'')}.pdf`;
+  doc.save(fname);
+  }catch(e){alert('PDF generation error: '+e.message);console.error(e)}
+  finally{document.body.removeChild(loadDiv)}
+}
+
+// ═══ UI ═══
+function tog(h){h.classList.toggle('shut');h.nextElementSibling.classList.toggle('hid')}
+function togSidebar(){document.getElementById('sidebar').classList.toggle('open');setTimeout(()=>{if(map)map.invalidateSize()},300)}
+function togBottom(){document.getElementById('bottompanel').classList.toggle('collapsed')}
+function stab(id,el){document.querySelectorAll('.bt').forEach(t=>t.classList.remove('on'));el.classList.add('on');document.getElementById('t-nl').style.display=id==='nl'?'':'none';document.getElementById('t-br').style.display=id==='br'?'':'none'}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  // Detect mobile/small screen and add class
+  function checkMobile(){
+    const m=window.innerWidth<=900||('ontouchstart' in window&&window.innerWidth<1100);
+    document.getElementById('app').classList.toggle('mob',m);
+    if(m) document.getElementById('bottompanel').classList.add('collapsed');
+  }
+  checkMobile();
+  window.addEventListener('resize',checkMobile);
+  
+  initP();initFlightDate();initGPSDrag();dbLoadCustom();
+  
+  // Guard: wait for Leaflet
+  if(typeof L!=='undefined'){initMap();calc();}
+  else{
+    const chk=setInterval(()=>{
+      if(typeof L!=='undefined'){clearInterval(chk);initMap();calc();}
+    },200);
+    setTimeout(()=>clearInterval(chk),10000);
+  }
+});
+</script>
+</body>
+</html>
