@@ -2,7 +2,7 @@
 
 A comprehensive VFR route planner for Italian GA/ULM pilots — single HTML file, no server required.
 
-🌐 **Live:** [https://amicoen-ops.github.io/vfr-planner/](https://amicoen-ops.github.io/vfr-planner/)
+🌐 **Live:** [https://amicoen-ops.github.io/VFR-planner/](https://amicoen-ops.github.io/VFR-planner/)
 
 ## Features
 
